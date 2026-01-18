@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/data/local/app_database.dart';
+import 'debug/db_seeder.dart';
 import 'app.dart'; 
 
 Future<void> main() async {
@@ -10,7 +11,7 @@ Future<void> main() async {
 
   // Debug-only seed
   assert(() {
-    DevSeeder(db).seedIfEmpty();
+    DevSeeder(db).reseed();
     return true;
   }());
 
