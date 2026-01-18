@@ -10,6 +10,8 @@ class InspectionRepository {
 
   Stream<List<Inspection>> watchAll() => db.inspectionDao.watchAll();
 
+  Stream<List<Inspection>> watchUnopened() => db.inspectionDao.watchUnopened();
+
   Stream<List<Inspection>> watchOpen() => db.inspectionDao.watchOpen();
 
   Stream<List<Inspection>> watchCompleted() => db.inspectionDao.watchCompleted();
@@ -30,6 +32,10 @@ class InspectionRepository {
     );
   }
 
+  Future<void> setOpened(String inspectionId) async {
+    await db.inspectionDao.setOpened(inspectionId);
+  }
+
   Future<void> setCompleted(String inspectionId, bool completed) async {
     await db.inspectionDao.setCompleted(inspectionId, completed);
   }
@@ -42,12 +48,16 @@ class InspectionRepository {
     await db.inspectionDao.deleteById(inspectionId);
   }
 
-  // Mark completed/ope functions
+
+  // Mark completed/open functions 
+  // These are wrappers around the 'set' functions -> 
+  // they require a bool so can change the state both ways, 
+  // whereas these wrappers are specific instances of the above methods
   Future<void> markCompleted(String inspectionId) =>
       setCompleted(inspectionId, true);
 
   Future<void> markOpen(String inspectionId) =>
-      setCompleted(inspectionId, false);
+      setOpened(inspectionId);
 
   // Updates a local inspection with the data from the server (update if it exists, insert if not)
   Future<void> upsertFromServer({

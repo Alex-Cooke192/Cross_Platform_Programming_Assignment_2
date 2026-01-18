@@ -29,6 +29,17 @@ class $InspectionsTable extends Inspections
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _openedAtMeta = const VerificationMeta(
+    'openedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> openedAt = GeneratedColumn<DateTime>(
+    'opened_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -82,6 +93,7 @@ class $InspectionsTable extends Inspections
   List<GeneratedColumn> get $columns => [
     id,
     aircraftId,
+    openedAt,
     createdAt,
     isCompleted,
     completedAt,
@@ -111,6 +123,12 @@ class $InspectionsTable extends Inspections
       );
     } else if (isInserting) {
       context.missing(_aircraftIdMeta);
+    }
+    if (data.containsKey('opened_at')) {
+      context.handle(
+        _openedAtMeta,
+        openedAt.isAcceptableOrUnknown(data['opened_at']!, _openedAtMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -162,6 +180,10 @@ class $InspectionsTable extends Inspections
         DriftSqlType.string,
         data['${effectivePrefix}aircraft_id'],
       )!,
+      openedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}opened_at'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -190,6 +212,7 @@ class $InspectionsTable extends Inspections
 class Inspection extends DataClass implements Insertable<Inspection> {
   final String id;
   final String aircraftId;
+  final DateTime? openedAt;
   final DateTime createdAt;
   final bool isCompleted;
   final DateTime? completedAt;
@@ -197,6 +220,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
   const Inspection({
     required this.id,
     required this.aircraftId,
+    this.openedAt,
     required this.createdAt,
     required this.isCompleted,
     this.completedAt,
@@ -207,6 +231,9 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['aircraft_id'] = Variable<String>(aircraftId);
+    if (!nullToAbsent || openedAt != null) {
+      map['opened_at'] = Variable<DateTime>(openedAt);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['is_completed'] = Variable<bool>(isCompleted);
     if (!nullToAbsent || completedAt != null) {
@@ -222,6 +249,9 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     return InspectionsCompanion(
       id: Value(id),
       aircraftId: Value(aircraftId),
+      openedAt: openedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openedAt),
       createdAt: Value(createdAt),
       isCompleted: Value(isCompleted),
       completedAt: completedAt == null && nullToAbsent
@@ -241,6 +271,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     return Inspection(
       id: serializer.fromJson<String>(json['id']),
       aircraftId: serializer.fromJson<String>(json['aircraftId']),
+      openedAt: serializer.fromJson<DateTime?>(json['openedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       isCompleted: serializer.fromJson<bool>(json['isCompleted']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
@@ -253,6 +284,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'aircraftId': serializer.toJson<String>(aircraftId),
+      'openedAt': serializer.toJson<DateTime?>(openedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'isCompleted': serializer.toJson<bool>(isCompleted),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
@@ -263,6 +295,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
   Inspection copyWith({
     String? id,
     String? aircraftId,
+    Value<DateTime?> openedAt = const Value.absent(),
     DateTime? createdAt,
     bool? isCompleted,
     Value<DateTime?> completedAt = const Value.absent(),
@@ -270,6 +303,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
   }) => Inspection(
     id: id ?? this.id,
     aircraftId: aircraftId ?? this.aircraftId,
+    openedAt: openedAt.present ? openedAt.value : this.openedAt,
     createdAt: createdAt ?? this.createdAt,
     isCompleted: isCompleted ?? this.isCompleted,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
@@ -281,6 +315,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       aircraftId: data.aircraftId.present
           ? data.aircraftId.value
           : this.aircraftId,
+      openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       isCompleted: data.isCompleted.present
           ? data.isCompleted.value
@@ -299,6 +334,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     return (StringBuffer('Inspection(')
           ..write('id: $id, ')
           ..write('aircraftId: $aircraftId, ')
+          ..write('openedAt: $openedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('completedAt: $completedAt, ')
@@ -311,6 +347,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
   int get hashCode => Object.hash(
     id,
     aircraftId,
+    openedAt,
     createdAt,
     isCompleted,
     completedAt,
@@ -322,6 +359,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       (other is Inspection &&
           other.id == this.id &&
           other.aircraftId == this.aircraftId &&
+          other.openedAt == this.openedAt &&
           other.createdAt == this.createdAt &&
           other.isCompleted == this.isCompleted &&
           other.completedAt == this.completedAt &&
@@ -331,6 +369,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
 class InspectionsCompanion extends UpdateCompanion<Inspection> {
   final Value<String> id;
   final Value<String> aircraftId;
+  final Value<DateTime?> openedAt;
   final Value<DateTime> createdAt;
   final Value<bool> isCompleted;
   final Value<DateTime?> completedAt;
@@ -339,6 +378,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
   const InspectionsCompanion({
     this.id = const Value.absent(),
     this.aircraftId = const Value.absent(),
+    this.openedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.completedAt = const Value.absent(),
@@ -348,6 +388,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
   InspectionsCompanion.insert({
     required String id,
     required String aircraftId,
+    this.openedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.completedAt = const Value.absent(),
@@ -358,6 +399,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
   static Insertable<Inspection> custom({
     Expression<String>? id,
     Expression<String>? aircraftId,
+    Expression<DateTime>? openedAt,
     Expression<DateTime>? createdAt,
     Expression<bool>? isCompleted,
     Expression<DateTime>? completedAt,
@@ -367,6 +409,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (aircraftId != null) 'aircraft_id': aircraftId,
+      if (openedAt != null) 'opened_at': openedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (isCompleted != null) 'is_completed': isCompleted,
       if (completedAt != null) 'completed_at': completedAt,
@@ -378,6 +421,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
   InspectionsCompanion copyWith({
     Value<String>? id,
     Value<String>? aircraftId,
+    Value<DateTime?>? openedAt,
     Value<DateTime>? createdAt,
     Value<bool>? isCompleted,
     Value<DateTime?>? completedAt,
@@ -387,6 +431,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     return InspectionsCompanion(
       id: id ?? this.id,
       aircraftId: aircraftId ?? this.aircraftId,
+      openedAt: openedAt ?? this.openedAt,
       createdAt: createdAt ?? this.createdAt,
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
@@ -403,6 +448,9 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     }
     if (aircraftId.present) {
       map['aircraft_id'] = Variable<String>(aircraftId.value);
+    }
+    if (openedAt.present) {
+      map['opened_at'] = Variable<DateTime>(openedAt.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -427,6 +475,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     return (StringBuffer('InspectionsCompanion(')
           ..write('id: $id, ')
           ..write('aircraftId: $aircraftId, ')
+          ..write('openedAt: $openedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('completedAt: $completedAt, ')
@@ -1090,6 +1139,7 @@ typedef $$InspectionsTableCreateCompanionBuilder =
     InspectionsCompanion Function({
       required String id,
       required String aircraftId,
+      Value<DateTime?> openedAt,
       Value<DateTime> createdAt,
       Value<bool> isCompleted,
       Value<DateTime?> completedAt,
@@ -1100,6 +1150,7 @@ typedef $$InspectionsTableUpdateCompanionBuilder =
     InspectionsCompanion Function({
       Value<String> id,
       Value<String> aircraftId,
+      Value<DateTime?> openedAt,
       Value<DateTime> createdAt,
       Value<bool> isCompleted,
       Value<DateTime?> completedAt,
@@ -1123,6 +1174,11 @@ class $$InspectionsTableFilterComposer
 
   ColumnFilters<String> get aircraftId => $composableBuilder(
     column: $table.aircraftId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1166,6 +1222,11 @@ class $$InspectionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1203,6 +1264,9 @@ class $$InspectionsTableAnnotationComposer
     column: $table.aircraftId,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get openedAt =>
+      $composableBuilder(column: $table.openedAt, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -1256,6 +1320,7 @@ class $$InspectionsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> aircraftId = const Value.absent(),
+                Value<DateTime?> openedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
@@ -1264,6 +1329,7 @@ class $$InspectionsTableTableManager
               }) => InspectionsCompanion(
                 id: id,
                 aircraftId: aircraftId,
+                openedAt: openedAt,
                 createdAt: createdAt,
                 isCompleted: isCompleted,
                 completedAt: completedAt,
@@ -1274,6 +1340,7 @@ class $$InspectionsTableTableManager
               ({
                 required String id,
                 required String aircraftId,
+                Value<DateTime?> openedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
@@ -1282,6 +1349,7 @@ class $$InspectionsTableTableManager
               }) => InspectionsCompanion.insert(
                 id: id,
                 aircraftId: aircraftId,
+                openedAt: openedAt,
                 createdAt: createdAt,
                 isCompleted: isCompleted,
                 completedAt: completedAt,

@@ -17,6 +17,14 @@ class InspectionDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
+  // Watch only Unopened inspections. 
+  Stream<List<Inspection>> watchUnopened() {
+  return (select(inspections)
+        ..where((i) => i.openedAt.isNull() & i.isCompleted.equals(false))
+        ..orderBy([(i) => OrderingTerm.desc(i.createdAt)]))
+      .watch();
+}
+
   /// Watch only open (not completed) inspections.
   Stream<List<Inspection>> watchOpen() {
     return (select(inspections)
@@ -55,6 +63,12 @@ class InspectionDao extends DatabaseAccessor<AppDatabase>
       ),
     );
   }
+
+  Future<int> setOpened(String id) {
+  return (update(inspections)..where((i) => i.id.equals(id))).write(
+    InspectionsCompanion(openedAt: Value(DateTime.now())),
+  );
+}
 
   /// Mark an inspection completed / not completed.
   Future<int> setCompleted(String inspectionId, bool completed) {

@@ -5,6 +5,8 @@ class Inspections extends Table {
 
   TextColumn get aircraftId => text()();
 
+  DateTimeColumn get openedAt => dateTime().nullable()();
+
   DateTimeColumn get createdAt =>
       dateTime().withDefault(currentDateAndTime)();
 
