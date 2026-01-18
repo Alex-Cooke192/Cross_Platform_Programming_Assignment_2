@@ -87,3 +87,16 @@ class TaskUi {
     );
   }
 }
+
+extension InspectionUiStatusLabel on InspectionUiStatus {
+  String get label {
+    switch (this) {
+      case InspectionUiStatus.unopened:
+        return 'Unopened';
+      case InspectionUiStatus.inProgress:
+        return 'In progress';
+      case InspectionUiStatus.completed:
+        return 'Completed';
+    }
+  }
+}

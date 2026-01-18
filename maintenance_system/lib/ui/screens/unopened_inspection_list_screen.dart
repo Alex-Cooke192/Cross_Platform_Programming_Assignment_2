@@ -38,7 +38,7 @@ class UnopenedInspectionListScreen extends StatelessWidget {
                 inspection.aircraftId,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              trailing: Text(inspection),
+              trailing: Text(inspection.status.label),
               onTap: () {
                 Navigator.push(
                   context,
