@@ -1,31 +1,56 @@
 import 'package:flutter/material.dart';
-import 'package:maintenance_system/core/data/local/app_database.dart';
-import 'package:maintenance_system/ui/screens/home_screen.dart';
+import 'package:maintenance_system/core/data/local/repositories/task_repository.dart';
+import 'package:provider/provider.dart';
+
+import 'core/data/local/app_database.dart';
+import 'core/data/local/repositories/inspection_repository.dart';
+import 'core/data/local/repositories/technician_repository.dart';
+import 'core/session/current_technician.dart';
+import 'ui/screens/home_screen.dart';
 import 'core/theme/theme_controller.dart';
 import 'config/app_themes.dart';
 
 class App extends StatelessWidget {
-  final AppDatabase database; 
+  final AppDatabase database;
 
   const App({
-    super.key, 
-    required this.database
-    });
+    super.key,
+    required this.database,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeController.themeMode,
-      builder: (context, themeMode, _) {
-        return MaterialApp(
-          title: 'RampCheck',
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: themeMode,
-          debugShowCheckedModeBanner: false,
-          home: const HomeScreen(), // At later date, change this to AppRoot()
-        );
-      },
+    return MultiProvider(
+      providers: [
+        // Session state
+        ChangeNotifierProvider(
+          create: (_) => CurrentTechnician(),
+        ),
+
+        // Repositories (backed by the same DB instance)
+        Provider(
+          create: (_) => InspectionRepository(database),
+        ),
+        Provider(
+          create: (_) => TechnicianRepository(database),
+        ),
+        Provider(
+          create: (_) => TaskRepository(database), 
+        ), 
+      ],
+      child: ValueListenableBuilder<ThemeMode>(
+        valueListenable: themeController.themeMode,
+        builder: (context, themeMode, _) {
+          return MaterialApp(
+            title: 'RampCheck',
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: themeMode,
+            debugShowCheckedModeBanner: false,
+            home: const HomeScreen(),
+          );
+        },
+      ),
     );
   }
 }
