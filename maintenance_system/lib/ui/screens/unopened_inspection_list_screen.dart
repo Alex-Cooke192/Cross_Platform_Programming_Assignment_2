@@ -10,27 +10,34 @@ class UnopenedInspectionListScreen extends StatelessWidget {
   final List<InspectionUi> inspections;
   final int inProgressCount;
 
-  /// Optional: if you want tasks shown/passed, provide them preloaded.
-  /// If you don't need tasks on the list screen, you can remove this entirely.
+  /// Optional: preloaded tasks so we can show counts in the list.
   final Map<String, List<TaskUi>> tasksByInspectionId;
+
+  /// Optional: let the container decide navigation / behavior.
+  final void Function(InspectionUi inspection)? onTapInspection;
 
   const UnopenedInspectionListScreen({
     super.key,
     required this.inspections,
     required this.inProgressCount,
     this.tasksByInspectionId = const {},
+    this.onTapInspection,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Inspections')),
+      appBar: AppBar(
+        title: Text('Inspections ($inProgressCount in progress)'),
+      ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: inspections.length,
         separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           final inspection = inspections[index];
+          final taskCount =
+              (tasksByInspectionId[inspection.id] ?? const []).length;
 
           return Card(
             child: ListTile(
@@ -38,16 +45,12 @@ class UnopenedInspectionListScreen extends StatelessWidget {
                 inspection.aircraftId,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              trailing: Text(inspection.status.label),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => UnopenedInspectionListScreen(
-                    ),
-                  ),
-                );
-              },
+
+              trailing: Text('$taskCount tasks'),
+
+              onTap: onTapInspection == null
+                  ? null
+                  : () => onTapInspection!(inspection),
             ),
           );
         },
@@ -56,37 +59,34 @@ class UnopenedInspectionListScreen extends StatelessWidget {
   }
 }
 
+
 /// Container: resolves streams + maps domain -> UI values, then hands plain values to UI.
 class UnopenedInspectionListContainer extends StatelessWidget {
   const UnopenedInspectionListContainer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final inspectionRepo = context.read<InspectionRepository>();
-
-    // Domain stream -> UI stream
-    final unopenedUi$ =
-        inspectionRepo.watchUnopened().map((rows) => rows.toUiList());
-
-    // Domain stream -> count stream
-    final inProgressCount$ =
-        inspectionRepo.watchOpen().map((rows) => rows.length);
+    final repo = context.read<InspectionRepository>();
 
     return StreamBuilder<List<InspectionUi>>(
-      stream: unopenedUi$,
+      stream: repo.watchUnopenedInspections(),
       initialData: const [],
-      builder: (context, inspectionsSnap) {
-        final inspections = inspectionsSnap.data ?? const [];
+      builder: (context, snap) {
+        final inspections = snap.data ?? const [];
+        final inProgressCount =
+            inspections.where((i) => i.isInProgress).length; // adjust to your model
 
-        return StreamBuilder<int>(
-          stream: inProgressCount$,
-          initialData: 0,
-          builder: (context, countSnap) {
-            final inProgressCount = countSnap.data ?? 0;
-
-            return UnopenedInspectionListScreen(
-              inspections: inspections,
-              inProgressCount: inProgressCount,
+        return UnopenedInspectionListScreen(
+          inspections: inspections,
+          inProgressCount: inProgressCount,
+          onTapInspection: (inspection) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => UnopenedInspectionDetailsContainer(
+                  inspectionId: inspection.id,
+                ),
+              ),
             );
           },
         );
