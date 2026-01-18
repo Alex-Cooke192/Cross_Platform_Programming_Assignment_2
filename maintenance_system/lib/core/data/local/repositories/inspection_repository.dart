@@ -18,6 +18,16 @@ class InspectionRepository {
 
   Stream<Inspection?> watchById(String id) => db.inspectionDao.watchById(id);
 
+  // ---- Reads (Counts) ----
+  Stream<int> watchUnopenedCount() =>
+      db.inspectionDao.watchUnopened().map((rows) => rows.length);
+
+  Stream<int> watchOpenCount() =>
+      db.inspectionDao.watchOpen().map((rows) => rows.length);
+
+  Stream<int> watchCompletedCount() =>
+      db.inspectionDao.watchCompleted().map((rows) => rows.length);
+
   // ---- Writes ----
 
   Future<void> createInspection({
