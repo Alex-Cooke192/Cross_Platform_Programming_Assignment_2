@@ -5,6 +5,7 @@ import '../../core/data/local/repositories/inspection_repository.dart';
 
 import '../../models/ui_models.dart';
 import '../../models/inspection_mapper.dart';
+import 'unopened_inspection_details_screen.dart';
 
 class UnopenedInspectionListScreen extends StatelessWidget {
   final List<InspectionUi> inspections;
@@ -68,27 +69,37 @@ class UnopenedInspectionListContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = context.read<InspectionRepository>();
 
+    final unopened$ =
+        repo.watchUnopened().map((rows) => rows.toUiList());
     return StreamBuilder<List<InspectionUi>>(
-      stream: repo.watchUnopenedInspections(),
+      stream: unopened$,
       initialData: const [],
-      builder: (context, snap) {
-        final inspections = snap.data ?? const [];
-        final inProgressCount =
-            inspections.where((i) => i.isInProgress).length; // adjust to your model
-
-        return UnopenedInspectionListScreen(
-          inspections: inspections,
-          inProgressCount: inProgressCount,
-          onTapInspection: (inspection) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => UnopenedInspectionDetailsContainer(
-                  inspectionId: inspection.id,
-                ),
-              ),
+      builder: (context, inspectionsSnap) {
+        final inspections = inspectionsSnap.data ?? const [];
+        
+        final inProgress$ = 
+          repo.watchOpenCount(); 
+        return StreamBuilder<int>(
+          stream: inProgress$, 
+          initialData: 0,
+          builder: (context, countSnap) {
+            final inProgressCount = countSnap.data ?? 0; 
+        
+            return UnopenedInspectionListScreen(
+              inspections: inspections,
+              inProgressCount: inProgressCount,
+              onTapInspection: (inspection) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UnopenedInspectionDetailsContainer(
+                      inspectionId: inspection.id,
+                    ),
+                  ),
+                );
+              },
             );
-          },
+          }
         );
       },
     );
