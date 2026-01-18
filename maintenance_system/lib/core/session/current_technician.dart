@@ -5,7 +5,7 @@ class CurrentTechnician extends ChangeNotifier {
 
   String? get technicianId => _technicianId;
 
-  void setTechnician(String id) {
+  void setTechnician(String? id) {
     _technicianId = id;
     notifyListeners();
   }
