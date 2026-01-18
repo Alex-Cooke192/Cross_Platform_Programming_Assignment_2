@@ -18,6 +18,29 @@ class $InspectionsTable extends Inspections
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _aircraftIdMeta = const VerificationMeta(
+    'aircraftId',
+  );
+  @override
+  late final GeneratedColumn<String> aircraftId = GeneratedColumn<String>(
+    'aircraft_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
   static const VerificationMeta _isCompletedMeta = const VerificationMeta(
     'isCompleted',
   );
@@ -33,8 +56,37 @@ class $InspectionsTable extends Inspections
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, isCompleted];
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+    'completed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _technicianIdMeta = const VerificationMeta(
+    'technicianId',
+  );
+  @override
+  late final GeneratedColumn<String> technicianId = GeneratedColumn<String>(
+    'technician_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    aircraftId,
+    createdAt,
+    isCompleted,
+    completedAt,
+    technicianId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -52,12 +104,44 @@ class $InspectionsTable extends Inspections
     } else if (isInserting) {
       context.missing(_idMeta);
     }
+    if (data.containsKey('aircraft_id')) {
+      context.handle(
+        _aircraftIdMeta,
+        aircraftId.isAcceptableOrUnknown(data['aircraft_id']!, _aircraftIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_aircraftIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
     if (data.containsKey('is_completed')) {
       context.handle(
         _isCompletedMeta,
         isCompleted.isAcceptableOrUnknown(
           data['is_completed']!,
           _isCompletedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('technician_id')) {
+      context.handle(
+        _technicianIdMeta,
+        technicianId.isAcceptableOrUnknown(
+          data['technician_id']!,
+          _technicianIdMeta,
         ),
       );
     }
@@ -74,10 +158,26 @@ class $InspectionsTable extends Inspections
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
+      aircraftId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aircraft_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
       isCompleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_completed'],
       )!,
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at'],
+      ),
+      technicianId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}technician_id'],
+      ),
     );
   }
 
@@ -89,18 +189,48 @@ class $InspectionsTable extends Inspections
 
 class Inspection extends DataClass implements Insertable<Inspection> {
   final String id;
+  final String aircraftId;
+  final DateTime createdAt;
   final bool isCompleted;
-  const Inspection({required this.id, required this.isCompleted});
+  final DateTime? completedAt;
+  final String? technicianId;
+  const Inspection({
+    required this.id,
+    required this.aircraftId,
+    required this.createdAt,
+    required this.isCompleted,
+    this.completedAt,
+    this.technicianId,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['aircraft_id'] = Variable<String>(aircraftId);
+    map['created_at'] = Variable<DateTime>(createdAt);
     map['is_completed'] = Variable<bool>(isCompleted);
+    if (!nullToAbsent || completedAt != null) {
+      map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    if (!nullToAbsent || technicianId != null) {
+      map['technician_id'] = Variable<String>(technicianId);
+    }
     return map;
   }
 
   InspectionsCompanion toCompanion(bool nullToAbsent) {
-    return InspectionsCompanion(id: Value(id), isCompleted: Value(isCompleted));
+    return InspectionsCompanion(
+      id: Value(id),
+      aircraftId: Value(aircraftId),
+      createdAt: Value(createdAt),
+      isCompleted: Value(isCompleted),
+      completedAt: completedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAt),
+      technicianId: technicianId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(technicianId),
+    );
   }
 
   factory Inspection.fromJson(
@@ -110,7 +240,11 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Inspection(
       id: serializer.fromJson<String>(json['id']),
+      aircraftId: serializer.fromJson<String>(json['aircraftId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       isCompleted: serializer.fromJson<bool>(json['isCompleted']),
+      completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      technicianId: serializer.fromJson<String?>(json['technicianId']),
     );
   }
   @override
@@ -118,20 +252,45 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'aircraftId': serializer.toJson<String>(aircraftId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
       'isCompleted': serializer.toJson<bool>(isCompleted),
+      'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'technicianId': serializer.toJson<String?>(technicianId),
     };
   }
 
-  Inspection copyWith({String? id, bool? isCompleted}) => Inspection(
+  Inspection copyWith({
+    String? id,
+    String? aircraftId,
+    DateTime? createdAt,
+    bool? isCompleted,
+    Value<DateTime?> completedAt = const Value.absent(),
+    Value<String?> technicianId = const Value.absent(),
+  }) => Inspection(
     id: id ?? this.id,
+    aircraftId: aircraftId ?? this.aircraftId,
+    createdAt: createdAt ?? this.createdAt,
     isCompleted: isCompleted ?? this.isCompleted,
+    completedAt: completedAt.present ? completedAt.value : this.completedAt,
+    technicianId: technicianId.present ? technicianId.value : this.technicianId,
   );
   Inspection copyWithCompanion(InspectionsCompanion data) {
     return Inspection(
       id: data.id.present ? data.id.value : this.id,
+      aircraftId: data.aircraftId.present
+          ? data.aircraftId.value
+          : this.aircraftId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       isCompleted: data.isCompleted.present
           ? data.isCompleted.value
           : this.isCompleted,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+      technicianId: data.technicianId.present
+          ? data.technicianId.value
+          : this.technicianId,
     );
   }
 
@@ -139,55 +298,99 @@ class Inspection extends DataClass implements Insertable<Inspection> {
   String toString() {
     return (StringBuffer('Inspection(')
           ..write('id: $id, ')
-          ..write('isCompleted: $isCompleted')
+          ..write('aircraftId: $aircraftId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('isCompleted: $isCompleted, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('technicianId: $technicianId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, isCompleted);
+  int get hashCode => Object.hash(
+    id,
+    aircraftId,
+    createdAt,
+    isCompleted,
+    completedAt,
+    technicianId,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Inspection &&
           other.id == this.id &&
-          other.isCompleted == this.isCompleted);
+          other.aircraftId == this.aircraftId &&
+          other.createdAt == this.createdAt &&
+          other.isCompleted == this.isCompleted &&
+          other.completedAt == this.completedAt &&
+          other.technicianId == this.technicianId);
 }
 
 class InspectionsCompanion extends UpdateCompanion<Inspection> {
   final Value<String> id;
+  final Value<String> aircraftId;
+  final Value<DateTime> createdAt;
   final Value<bool> isCompleted;
+  final Value<DateTime?> completedAt;
+  final Value<String?> technicianId;
   final Value<int> rowid;
   const InspectionsCompanion({
     this.id = const Value.absent(),
+    this.aircraftId = const Value.absent(),
+    this.createdAt = const Value.absent(),
     this.isCompleted = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.technicianId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   InspectionsCompanion.insert({
     required String id,
+    required String aircraftId,
+    this.createdAt = const Value.absent(),
     this.isCompleted = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.technicianId = const Value.absent(),
     this.rowid = const Value.absent(),
-  }) : id = Value(id);
+  }) : id = Value(id),
+       aircraftId = Value(aircraftId);
   static Insertable<Inspection> custom({
     Expression<String>? id,
+    Expression<String>? aircraftId,
+    Expression<DateTime>? createdAt,
     Expression<bool>? isCompleted,
+    Expression<DateTime>? completedAt,
+    Expression<String>? technicianId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (aircraftId != null) 'aircraft_id': aircraftId,
+      if (createdAt != null) 'created_at': createdAt,
       if (isCompleted != null) 'is_completed': isCompleted,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (technicianId != null) 'technician_id': technicianId,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
   InspectionsCompanion copyWith({
     Value<String>? id,
+    Value<String>? aircraftId,
+    Value<DateTime>? createdAt,
     Value<bool>? isCompleted,
+    Value<DateTime?>? completedAt,
+    Value<String?>? technicianId,
     Value<int>? rowid,
   }) {
     return InspectionsCompanion(
       id: id ?? this.id,
+      aircraftId: aircraftId ?? this.aircraftId,
+      createdAt: createdAt ?? this.createdAt,
       isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
+      technicianId: technicianId ?? this.technicianId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -198,8 +401,20 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
+    if (aircraftId.present) {
+      map['aircraft_id'] = Variable<String>(aircraftId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
     if (isCompleted.present) {
       map['is_completed'] = Variable<bool>(isCompleted.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (technicianId.present) {
+      map['technician_id'] = Variable<String>(technicianId.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -211,7 +426,11 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
   String toString() {
     return (StringBuffer('InspectionsCompanion(')
           ..write('id: $id, ')
+          ..write('aircraftId: $aircraftId, ')
+          ..write('createdAt: $createdAt, ')
           ..write('isCompleted: $isCompleted, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('technicianId: $technicianId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -243,6 +462,15 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _isCompletedMeta = const VerificationMeta(
     'isCompleted',
   );
@@ -258,8 +486,33 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _resultMeta = const VerificationMeta('result');
   @override
-  List<GeneratedColumn> get $columns => [id, inspectionId, isCompleted];
+  late final GeneratedColumn<String> result = GeneratedColumn<String>(
+    'result',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    inspectionId,
+    title,
+    isCompleted,
+    result,
+    notes,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -288,6 +541,14 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     } else if (isInserting) {
       context.missing(_inspectionIdMeta);
     }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
     if (data.containsKey('is_completed')) {
       context.handle(
         _isCompletedMeta,
@@ -295,6 +556,18 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
           data['is_completed']!,
           _isCompletedMeta,
         ),
+      );
+    }
+    if (data.containsKey('result')) {
+      context.handle(
+        _resultMeta,
+        result.isAcceptableOrUnknown(data['result']!, _resultMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
     return context;
@@ -314,10 +587,22 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         DriftSqlType.string,
         data['${effectivePrefix}inspection_id'],
       )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
       isCompleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_completed'],
       )!,
+      result: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}result'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
     );
   }
 
@@ -330,18 +615,31 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
 class Task extends DataClass implements Insertable<Task> {
   final String id;
   final String inspectionId;
+  final String title;
   final bool isCompleted;
+  final String? result;
+  final String? notes;
   const Task({
     required this.id,
     required this.inspectionId,
+    required this.title,
     required this.isCompleted,
+    this.result,
+    this.notes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['inspection_id'] = Variable<String>(inspectionId);
+    map['title'] = Variable<String>(title);
     map['is_completed'] = Variable<bool>(isCompleted);
+    if (!nullToAbsent || result != null) {
+      map['result'] = Variable<String>(result);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
     return map;
   }
 
@@ -349,7 +647,14 @@ class Task extends DataClass implements Insertable<Task> {
     return TasksCompanion(
       id: Value(id),
       inspectionId: Value(inspectionId),
+      title: Value(title),
       isCompleted: Value(isCompleted),
+      result: result == null && nullToAbsent
+          ? const Value.absent()
+          : Value(result),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
     );
   }
 
@@ -361,7 +666,10 @@ class Task extends DataClass implements Insertable<Task> {
     return Task(
       id: serializer.fromJson<String>(json['id']),
       inspectionId: serializer.fromJson<String>(json['inspectionId']),
+      title: serializer.fromJson<String>(json['title']),
       isCompleted: serializer.fromJson<bool>(json['isCompleted']),
+      result: serializer.fromJson<String?>(json['result']),
+      notes: serializer.fromJson<String?>(json['notes']),
     );
   }
   @override
@@ -370,14 +678,27 @@ class Task extends DataClass implements Insertable<Task> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'inspectionId': serializer.toJson<String>(inspectionId),
+      'title': serializer.toJson<String>(title),
       'isCompleted': serializer.toJson<bool>(isCompleted),
+      'result': serializer.toJson<String?>(result),
+      'notes': serializer.toJson<String?>(notes),
     };
   }
 
-  Task copyWith({String? id, String? inspectionId, bool? isCompleted}) => Task(
+  Task copyWith({
+    String? id,
+    String? inspectionId,
+    String? title,
+    bool? isCompleted,
+    Value<String?> result = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+  }) => Task(
     id: id ?? this.id,
     inspectionId: inspectionId ?? this.inspectionId,
+    title: title ?? this.title,
     isCompleted: isCompleted ?? this.isCompleted,
+    result: result.present ? result.value : this.result,
+    notes: notes.present ? notes.value : this.notes,
   );
   Task copyWithCompanion(TasksCompanion data) {
     return Task(
@@ -385,9 +706,12 @@ class Task extends DataClass implements Insertable<Task> {
       inspectionId: data.inspectionId.present
           ? data.inspectionId.value
           : this.inspectionId,
+      title: data.title.present ? data.title.value : this.title,
       isCompleted: data.isCompleted.present
           ? data.isCompleted.value
           : this.isCompleted,
+      result: data.result.present ? data.result.value : this.result,
+      notes: data.notes.present ? data.notes.value : this.notes,
     );
   }
 
@@ -396,50 +720,73 @@ class Task extends DataClass implements Insertable<Task> {
     return (StringBuffer('Task(')
           ..write('id: $id, ')
           ..write('inspectionId: $inspectionId, ')
-          ..write('isCompleted: $isCompleted')
+          ..write('title: $title, ')
+          ..write('isCompleted: $isCompleted, ')
+          ..write('result: $result, ')
+          ..write('notes: $notes')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, inspectionId, isCompleted);
+  int get hashCode =>
+      Object.hash(id, inspectionId, title, isCompleted, result, notes);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Task &&
           other.id == this.id &&
           other.inspectionId == this.inspectionId &&
-          other.isCompleted == this.isCompleted);
+          other.title == this.title &&
+          other.isCompleted == this.isCompleted &&
+          other.result == this.result &&
+          other.notes == this.notes);
 }
 
 class TasksCompanion extends UpdateCompanion<Task> {
   final Value<String> id;
   final Value<String> inspectionId;
+  final Value<String> title;
   final Value<bool> isCompleted;
+  final Value<String?> result;
+  final Value<String?> notes;
   final Value<int> rowid;
   const TasksCompanion({
     this.id = const Value.absent(),
     this.inspectionId = const Value.absent(),
+    this.title = const Value.absent(),
     this.isCompleted = const Value.absent(),
+    this.result = const Value.absent(),
+    this.notes = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TasksCompanion.insert({
     required String id,
     required String inspectionId,
+    required String title,
     this.isCompleted = const Value.absent(),
+    this.result = const Value.absent(),
+    this.notes = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
-       inspectionId = Value(inspectionId);
+       inspectionId = Value(inspectionId),
+       title = Value(title);
   static Insertable<Task> custom({
     Expression<String>? id,
     Expression<String>? inspectionId,
+    Expression<String>? title,
     Expression<bool>? isCompleted,
+    Expression<String>? result,
+    Expression<String>? notes,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (inspectionId != null) 'inspection_id': inspectionId,
+      if (title != null) 'title': title,
       if (isCompleted != null) 'is_completed': isCompleted,
+      if (result != null) 'result': result,
+      if (notes != null) 'notes': notes,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -447,13 +794,19 @@ class TasksCompanion extends UpdateCompanion<Task> {
   TasksCompanion copyWith({
     Value<String>? id,
     Value<String>? inspectionId,
+    Value<String>? title,
     Value<bool>? isCompleted,
+    Value<String?>? result,
+    Value<String?>? notes,
     Value<int>? rowid,
   }) {
     return TasksCompanion(
       id: id ?? this.id,
       inspectionId: inspectionId ?? this.inspectionId,
+      title: title ?? this.title,
       isCompleted: isCompleted ?? this.isCompleted,
+      result: result ?? this.result,
+      notes: notes ?? this.notes,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -467,8 +820,17 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (inspectionId.present) {
       map['inspection_id'] = Variable<String>(inspectionId.value);
     }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
     if (isCompleted.present) {
       map['is_completed'] = Variable<bool>(isCompleted.value);
+    }
+    if (result.present) {
+      map['result'] = Variable<String>(result.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -481,7 +843,10 @@ class TasksCompanion extends UpdateCompanion<Task> {
     return (StringBuffer('TasksCompanion(')
           ..write('id: $id, ')
           ..write('inspectionId: $inspectionId, ')
+          ..write('title: $title, ')
           ..write('isCompleted: $isCompleted, ')
+          ..write('result: $result, ')
+          ..write('notes: $notes, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -702,6 +1067,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TechniciansCacheTable techniciansCache = $TechniciansCacheTable(
     this,
   );
+  late final Index tasksInspectionId = Index(
+    'tasks_inspection_id',
+    'CREATE INDEX tasks_inspection_id ON tasks (inspection_id)',
+  );
   late final InspectionDao inspectionDao = InspectionDao(this as AppDatabase);
   late final TaskDao taskDao = TaskDao(this as AppDatabase);
   @override
@@ -712,19 +1081,28 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     inspections,
     tasks,
     techniciansCache,
+    tasksInspectionId,
   ];
 }
 
 typedef $$InspectionsTableCreateCompanionBuilder =
     InspectionsCompanion Function({
       required String id,
+      required String aircraftId,
+      Value<DateTime> createdAt,
       Value<bool> isCompleted,
+      Value<DateTime?> completedAt,
+      Value<String?> technicianId,
       Value<int> rowid,
     });
 typedef $$InspectionsTableUpdateCompanionBuilder =
     InspectionsCompanion Function({
       Value<String> id,
+      Value<String> aircraftId,
+      Value<DateTime> createdAt,
       Value<bool> isCompleted,
+      Value<DateTime?> completedAt,
+      Value<String?> technicianId,
       Value<int> rowid,
     });
 
@@ -742,8 +1120,28 @@ class $$InspectionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get aircraftId => $composableBuilder(
+    column: $table.aircraftId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get technicianId => $composableBuilder(
+    column: $table.technicianId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -762,8 +1160,28 @@ class $$InspectionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get aircraftId => $composableBuilder(
+    column: $table.aircraftId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get technicianId => $composableBuilder(
+    column: $table.technicianId,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -780,8 +1198,26 @@ class $$InspectionsTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get aircraftId => $composableBuilder(
+    column: $table.aircraftId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
   GeneratedColumn<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get technicianId => $composableBuilder(
+    column: $table.technicianId,
     builder: (column) => column,
   );
 }
@@ -818,21 +1254,37 @@ class $$InspectionsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
+                Value<String> aircraftId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
+                Value<DateTime?> completedAt = const Value.absent(),
+                Value<String?> technicianId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => InspectionsCompanion(
                 id: id,
+                aircraftId: aircraftId,
+                createdAt: createdAt,
                 isCompleted: isCompleted,
+                completedAt: completedAt,
+                technicianId: technicianId,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
+                required String aircraftId,
+                Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
+                Value<DateTime?> completedAt = const Value.absent(),
+                Value<String?> technicianId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => InspectionsCompanion.insert(
                 id: id,
+                aircraftId: aircraftId,
+                createdAt: createdAt,
                 isCompleted: isCompleted,
+                completedAt: completedAt,
+                technicianId: technicianId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -864,14 +1316,20 @@ typedef $$TasksTableCreateCompanionBuilder =
     TasksCompanion Function({
       required String id,
       required String inspectionId,
+      required String title,
       Value<bool> isCompleted,
+      Value<String?> result,
+      Value<String?> notes,
       Value<int> rowid,
     });
 typedef $$TasksTableUpdateCompanionBuilder =
     TasksCompanion Function({
       Value<String> id,
       Value<String> inspectionId,
+      Value<String> title,
       Value<bool> isCompleted,
+      Value<String?> result,
+      Value<String?> notes,
       Value<int> rowid,
     });
 
@@ -893,8 +1351,23 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get result => $composableBuilder(
+    column: $table.result,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -918,8 +1391,23 @@ class $$TasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get result => $composableBuilder(
+    column: $table.result,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -941,10 +1429,19 @@ class $$TasksTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
   GeneratedColumn<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get result =>
+      $composableBuilder(column: $table.result, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
 }
 
 class $$TasksTableTableManager
@@ -977,24 +1474,36 @@ class $$TasksTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> inspectionId = const Value.absent(),
+                Value<String> title = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
+                Value<String?> result = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TasksCompanion(
                 id: id,
                 inspectionId: inspectionId,
+                title: title,
                 isCompleted: isCompleted,
+                result: result,
+                notes: notes,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String id,
                 required String inspectionId,
+                required String title,
                 Value<bool> isCompleted = const Value.absent(),
+                Value<String?> result = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TasksCompanion.insert(
                 id: id,
                 inspectionId: inspectionId,
+                title: title,
                 isCompleted: isCompleted,
+                result: result,
+                notes: notes,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
