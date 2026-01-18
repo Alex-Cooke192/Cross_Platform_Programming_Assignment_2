@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:maintenance_system/ui/widgets/signed_in_as.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/data/local/repositories/inspection_repository.dart';
-import '../../core/data/local/repositories/task_repository.dart';
-import '../widgets/signed_in_as.dart';
+
+import 'unopened_inspection_list_screen.dart';
+import 'opened_inspection_list_screen.dart';
+import 'completed_inspection_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,9 +15,9 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final inspectionRepo = context.read<InspectionRepository>();
 
-    final UnopenedCount$ = inspectionRepo.watchUnopened(); 
-    final OpenCount$ = inspectionRepo.watchOpen();
-    final CompletedCount$ = inspectionRepo.watchCompleted();
+    final UnopenedCount$ = inspectionRepo.watchUnopenedCount(); 
+    final OpenCount$ = inspectionRepo.watchOpenCount();
+    final CompletedCount$ = inspectionRepo.watchCompletedCount();
 
     return Scaffold(
       appBar: AppBar(
@@ -23,7 +26,7 @@ class HomeScreen extends StatelessWidget {
         leadingWidth: 180,
         leading: const Padding(
           padding: EdgeInsets.only(left: 12),
-          child: SignedInAs(userLabel: currentUser.displayName),
+          child: SignedInAsContainer(),
         ),
         actions: const [
           Icon(Icons.sync),
@@ -54,14 +57,14 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const OutstandingInspectionListScreen(),
+                        builder: (_) => const UnopenedInspectionListContainer(), 
                       ),
                     );
                   },
                 );
               },
             ),
-
+        
             const SizedBox(height: 12),
 
             StreamBuilder<int>(
@@ -77,7 +80,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const OpenedInspectionsListScreen(),
+                        builder: (_) => const OpenedInspectionListContainer(),
                       ),
                     );
                   },
@@ -100,7 +103,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const CompletedInspectionListScreen(),
+                        builder: (_) => const CompletedInspectionListContainer(),
                       ),
                     );
                   },
