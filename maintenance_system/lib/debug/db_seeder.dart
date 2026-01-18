@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 
 import '../core/data/local/app_database.dart';
@@ -15,9 +16,7 @@ class DevSeeder {
       await db.delete(db.inspections).go();
       await db.delete(db.techniciansCache).go();
 
-      // -----------------------
       // 1) Insert 5 technicians
-      // -----------------------
       final techNames = <String>[
         'tech.jane',
         'tech.ali',
@@ -39,38 +38,50 @@ class DevSeeder {
         );
       }
 
-      // -----------------------
-      // 2) Insert 7 inspections
-      //    (rotate technicians)
-      // -----------------------
-      final aircraftIds = <String>[
-        'G-ABCD',
-        'G-EFGH',
-        'G-IJKL',
-        'G-MNOP',
-        'G-QRST',
-        'G-UVWX',
-        'G-YZ12',
+      // 2) Build 7 inspections with a spread of states
+      final now = DateTime.now();
+
+      final seededInspections = <({
+        String aircraftId,
+        String status,
+        DateTime? openedAt,
+        DateTime? completedAt,
+      })>[
+        // Unopened / outstanding (not opened yet)
+        (aircraftId: 'G-ABCD', status: 'outstanding', openedAt: null, completedAt: null),
+        (aircraftId: 'G-EFGH', status: 'outstanding', openedAt: null, completedAt: null),
+
+        // Opened / in progress
+        (aircraftId: 'G-IJKL', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 6)), completedAt: null),
+        (aircraftId: 'G-MNOP', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 4)), completedAt: null),
+        (aircraftId: 'G-QRST', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 2)), completedAt: null),
+
+        // Completed (awaiting sync)
+        (aircraftId: 'G-UVWX', status: 'completed_awaiting_sync', openedAt: now.subtract(const Duration(days: 1, hours: 3)), completedAt: now.subtract(const Duration(days: 1, hours: 1))),
+        (aircraftId: 'G-YZ12', status: 'completed_awaiting_sync', openedAt: now.subtract(const Duration(days: 2, hours: 5)), completedAt: now.subtract(const Duration(days: 2, hours: 2))),
       ];
 
       final inspectionIds = <String>[];
-      for (var i = 0; i < aircraftIds.length; i++) {
+
+      for (var i = 0; i < seededInspections.length; i++) {
+        final seed = seededInspections[i];
         final inspectionId = _uuid.v4();
         inspectionIds.add(inspectionId);
 
         final technicianId = techIds[i % techIds.length];
-        final aircraftId = aircraftIds[i];
 
-        await db.inspectionDao.insertInspection(
-          id: inspectionId,
-          aircraftId: aircraftId,
-          technicianId: technicianId,
+        await db.into(db.inspections).insert(
+          InspectionsCompanion.insert(
+            id: inspectionId,
+            aircraftId: seed.aircraftId,
+            technicianId: drift.Value(technicianId),
+            openedAt: drift.Value(seed.openedAt),
+            completedAt: drift.Value(seed.completedAt),
+          ),
         );
       }
 
-      // -----------------------
       // 3) Insert 2–3 tasks per inspection
-      // -----------------------
       const taskPool = <String>[
         'Check brakes',
         'Check lights',
@@ -90,22 +101,30 @@ class DevSeeder {
 
       for (var i = 0; i < inspectionIds.length; i++) {
         final inspectionId = inspectionIds[i];
+        final insp = seededInspections[i];
 
-        // 2–3 tasks each: first 3 inspections get 3 tasks, rest get 2
         final tasksForThisInspection = i < 3 ? 3 : 2;
 
         for (var t = 0; t < tasksForThisInspection; t++) {
           final title = taskPool[taskCursor % taskPool.length];
           taskCursor++;
 
-          await db.taskDao.insertTask(
-            id: _uuid.v4(),
-            inspectionId: inspectionId,
-            title: title,
+          // Mark completed fields for completed inspections.
+          final isCompleted = insp.status == 'completed_awaiting_sync';
+
+          await db.into(db.tasks).insert(
+            TasksCompanion.insert(
+              id: _uuid.v4(),
+              inspectionId: inspectionId,
+              title: title,
+              
+              isCompleted: drift.Value(isCompleted),
+            ),
           );
         }
       }
     });
   }
 }
+
 
