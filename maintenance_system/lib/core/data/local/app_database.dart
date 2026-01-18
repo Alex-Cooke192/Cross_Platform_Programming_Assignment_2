@@ -13,12 +13,13 @@ import 'tables/technicians_cache.dart';
 // DAOs
 import 'daos/inspection_dao.dart';
 import 'daos/task_dao.dart';
+import 'daos/technician_dao.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(
   tables: [Inspections, Tasks, TechniciansCache],
-  daos: [InspectionDao, TaskDao],
+  daos: [InspectionDao, TaskDao, TechnicianDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
