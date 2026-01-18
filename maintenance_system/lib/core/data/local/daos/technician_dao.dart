@@ -20,6 +20,11 @@ class TechnicianDao extends DatabaseAccessor<AppDatabase>
         .watchSingleOrNull();
   }
 
+  Future<TechniciansCacheData?> getAny() {
+    return (select(techniciansCache)..limit(1)).getSingleOrNull();
+  }
+
+
   Future<void> upsertOne({required String id, required String name}) {
     return into(techniciansCache).insertOnConflictUpdate(
       TechniciansCacheCompanion(

@@ -14,6 +14,10 @@ class TechnicianRepository {
   Future<void> upsertOne({required String id, required String name}) =>
       db.technicianDao.upsertOne(id: id, name: name);
 
+  Future<TechniciansCacheData?> getAnyTechnician() {
+    return db.technicianDao.getAny();
+  }
+
   Future<void> replaceAllFromServer(List<Map<String, String>> technicians) {
     final rows = technicians
         .map((t) => TechniciansCacheCompanion(
