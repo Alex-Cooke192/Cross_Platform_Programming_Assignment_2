@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../widgets/signed_in_as_widget.dart';
+import '../../core/data/local/repositories/inspection_repository.dart';
+import '../../core/data/local/repositories/task_repository.dart';
+import '../widgets/signed_in_as.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -9,11 +11,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inspectionRepo = context.read<InspectionRepository>();
-    final taskRepo = context.read<TaskRepository>(); // keep if needed later - currently unused
 
-    final readyToBeginCount$ = inspectionRepo.watchReadyToBeginCount();
-    final inProgressCount$ = inspectionRepo.watchInProgressCount();
-    final awaitingSyncCount$ = inspectionRepo.watchAwaitingSyncCount();
+    final UnopenedCount$ = inspectionRepo.watchUnopened(); 
+    final OpenCount$ = inspectionRepo.watchOpen();
+    final CompletedCount$ = inspectionRepo.watchCompleted();
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +42,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             StreamBuilder<int>(
-              stream: readyToBeginCount$,
+              stream: UnopenedCount$,
               initialData: 0,
               builder: (context, snap) {
                 final value = snap.data ?? 0;
@@ -64,7 +65,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             StreamBuilder<int>(
-              stream: inProgressCount$,
+              stream: OpenCount$,
               initialData: 0,
               builder: (context, snap) {
                 final value = snap.data ?? 0;
@@ -76,7 +77,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const CurrentInspectionListScreen(),
+                        builder: (_) => const OpenedInspectionsListScreen(),
                       ),
                     );
                   },
@@ -87,7 +88,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             StreamBuilder<int>(
-              stream: awaitingSyncCount$,
+              stream: CompletedCount$,
               initialData: 0,
               builder: (context, snap) {
                 final value = snap.data ?? 0;
