@@ -9,3 +9,5 @@ class ThemeController {
         themeMode.value == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
   }
 }
+
+final ThemeController themeController = ThemeController(); 

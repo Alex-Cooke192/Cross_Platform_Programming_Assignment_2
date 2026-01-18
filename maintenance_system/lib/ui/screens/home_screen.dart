@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
         leadingWidth: 180,
         leading: const Padding(
           padding: EdgeInsets.only(left: 12),
-          child: SignedInAs(userLabel: 'user.name'),
+          child: SignedInAs(userLabel: currentUser.displayName),
         ),
         actions: const [
           Icon(Icons.sync),
