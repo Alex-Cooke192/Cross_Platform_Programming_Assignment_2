@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maintenance_system/app_root.dart';
 import 'package:maintenance_system/core/data/local/repositories/task_repository.dart';
 import 'package:provider/provider.dart';
 
@@ -6,7 +7,6 @@ import 'core/data/local/app_database.dart';
 import 'core/data/local/repositories/inspection_repository.dart';
 import 'core/data/local/repositories/technician_repository.dart';
 import 'core/session/current_technician.dart';
-import 'ui/screens/home_screen.dart';
 import 'core/theme/theme_controller.dart';
 import 'config/app_themes.dart';
 
@@ -47,7 +47,7 @@ class App extends StatelessWidget {
             darkTheme: AppTheme.dark,
             themeMode: themeMode,
             debugShowCheckedModeBanner: false,
-            home: const HomeScreen(),
+            home: const AppRoot(),
           );
         },
       ),
