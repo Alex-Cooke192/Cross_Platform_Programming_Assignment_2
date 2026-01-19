@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:maintenance_system/core/data/local/repositories/technician_repository.dart';
+import '../screens/home_screen.dart';
 
 import '../widgets/theme_toggle_button.dart';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  final TextEditingController technicianIdController;
+  final VoidCallback? onSignInPressed;
+  final bool isLoading;
+
+  const LoginScreen({
+    super.key,
+    required this.technicianIdController,
+    required this.onSignInPressed,
+    required this.isLoading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,9 +24,7 @@ class LoginScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('RampCheck Login'),
-        actions: const [
-          ThemeToggleButton(),
-        ],
+        actions: const [ThemeToggleButton()],
       ),
       body: SafeArea(
         child: Center(
@@ -39,9 +49,9 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Technician ID field (no controller, no validation)
-                  const TextField(
-                    decoration: InputDecoration(
+                  TextField(
+                    controller: technicianIdController,
+                    decoration: const InputDecoration(
                       labelText: 'Technician ID',
                       hintText: 'e.g. tech.jane',
                       border: OutlineInputBorder(),
@@ -50,33 +60,15 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // Sign in button (no logic yet)
                   FilledButton(
-                    onPressed: null, // intentionally disabled for now
-                    child: const Text('Sign in'),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Info / tip box
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'After your first sign-in, you can work offline and sync later.',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ),
-                      ],
-                    ),
+                    onPressed: isLoading ? null : onSignInPressed,
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Sign in'),
                   ),
                 ],
               ),
@@ -88,3 +80,58 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
+class LoginContainer extends StatefulWidget {
+  const LoginContainer({super.key});
+
+  @override
+  State<LoginContainer> createState() => _LoginContainerState();
+}
+
+class _LoginContainerState extends State<LoginContainer> {
+  final _technicianIdController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _technicianIdController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSignIn() async {
+    final technicianId = _technicianIdController.text.trim();
+    if (technicianId.isEmpty) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final techRepo = context.read<TechnicianRepository>();
+      final technician =
+          await techRepo.watchByIdUi(technicianId).first;
+
+      if (!mounted) return;
+
+      if (technician == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No technician found for ID: $technicianId')),
+        );
+        return;
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => HomeScreen(),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+  @override
+  Widget build(BuildContext context) {
+    return LoginScreen(
+      technicianIdController: _technicianIdController,
+      isLoading: _isLoading,
+      onSignInPressed: _handleSignIn,
+    );
+  }
+}
