@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:maintenance_system/core/session/current_technician.dart';
 import 'package:provider/provider.dart';
 import 'package:maintenance_system/core/data/local/repositories/technician_repository.dart';
-import '../screens/home_screen.dart';
 
 import '../widgets/theme_toggle_button.dart';
 
@@ -90,12 +89,12 @@ class _LoginContainerState extends State<LoginContainer> {
 
     try {
       final techRepo = context.read<TechnicianRepository>();
-      final tech = await techRepo.watchByIdUi(techId).first;
+      final tech = await techRepo.getByName(techId);
 
       if (!mounted) return;
       if (tech == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No technician found for ID: $techId"))
+          SnackBar(content: Text("No technician found for name: $techId"))
         ); 
         return; 
       }

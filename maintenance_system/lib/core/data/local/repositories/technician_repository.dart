@@ -19,6 +19,15 @@ class TechnicianRepository {
     return row?.toUi();
   }
 
+  Stream<TechnicianUi?> watchByName(String name) =>
+    db.technicianDao.watchByName(name).map((row) => row?.toUi()); 
+
+  Future<TechnicianUi?> getByName(String name) async {
+      final row = await db.technicianDao.getByName(name);
+      return row?.toUi(); 
+  }
+
+
   // These methods are now optional, as ui now uses TechnicianUi model
   Stream<List<TechniciansCacheData>> watchAll() => db.technicianDao.watchAll();
 

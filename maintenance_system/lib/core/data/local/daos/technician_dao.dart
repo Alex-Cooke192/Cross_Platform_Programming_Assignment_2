@@ -24,6 +24,16 @@ class TechnicianDao extends DatabaseAccessor<AppDatabase>
     return (select(techniciansCache)..limit(1)).getSingleOrNull();
   }
 
+  Stream<TechniciansCacheData?> watchByName(String name) {
+    return (select(techniciansCache)..where((t) => t.name.equals(name)))
+        .watchSingleOrNull();
+  }
+
+  Future<TechniciansCacheData?> getByName(String name) {
+    return (select(techniciansCache)..where((t) => t.name.equals(name)))
+        .getSingleOrNull();
+  }
+
 
   Future<void> upsertOne({required String id, required String name}) {
     return into(techniciansCache).insertOnConflictUpdate(
