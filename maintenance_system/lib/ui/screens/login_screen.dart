@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maintenance_system/core/session/current_technician.dart';
 import 'package:provider/provider.dart';
 import 'package:maintenance_system/core/data/local/repositories/technician_repository.dart';
+import 'package:maintenance_system/ui/screens/create_new_technician_screen.dart';
 
 import '../widgets/theme_toggle_button.dart';
 
@@ -157,6 +158,20 @@ class _LoginContainerState extends State<LoginContainer> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Text('Sign in'),
+                  ),
+                  const SizedBox(height: 8),
+
+                  TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => CreateTechnicianContainer(),
+                              ),
+                            );
+                          },
+                    child: const Text('Create technician account'),
                   ),
                 ],
               ),

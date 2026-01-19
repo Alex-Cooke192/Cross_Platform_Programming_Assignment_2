@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import '../../../../models/ui_models.dart';
 import '../../../../models/technician_mapper.dart';
+import 'package:uuid/uuid.dart';
 
 import '../app_database.dart';
 
@@ -39,6 +40,21 @@ class TechnicianRepository {
 
   Future<TechniciansCacheData?> getAnyTechnician() {
     return db.technicianDao.getAny();
+  }
+
+  Future<String> createTechnician({required String name}) async {
+    final formattedName = name.trim().replaceAll(RegExp(r'\s+'), ' ');
+    final id = const Uuid().v4();
+
+    if (await db.technicianDao.nameExists(formattedName)) {
+      throw Exception('Technician name already exists');
+    }
+    await db.technicianDao.upsertOne(
+        id: id,
+        name: formattedName,
+    ); 
+
+    return id;
   }
 
   Future<void> replaceAllFromServer(List<Map<String, String>> technicians) {
