@@ -1,4 +1,6 @@
 import 'package:drift/drift.dart';
+import '../../../../models/ui_models.dart';
+import '../../../../models/technician_mapper.dart';
 
 import '../app_database.dart';
 
@@ -6,6 +8,27 @@ class TechnicianRepository {
   final AppDatabase db;
   TechnicianRepository(this.db);
 
+  Stream<List<TechnicianUi>> watchAllUi() =>
+      db.technicianDao.watchAll().map((rows) => rows.map((r) => r.toUi()).toList());
+
+  Stream<TechnicianUi?> watchByIdUi(String id) =>
+      db.technicianDao.watchById(id).map((row) => row?.toUi());
+
+  Future<TechnicianUi?> getAnyTechnicianUi() async {
+    final row = await db.technicianDao.getAny();
+    return row?.toUi();
+  }
+
+  Stream<TechnicianUi?> watchByName(String name) =>
+    db.technicianDao.watchByName(name).map((row) => row?.toUi()); 
+
+  Future<TechnicianUi?> getByName(String name) async {
+      final row = await db.technicianDao.getByName(name);
+      return row?.toUi(); 
+  }
+
+
+  // These methods are now optional, as ui now uses TechnicianUi model
   Stream<List<TechniciansCacheData>> watchAll() => db.technicianDao.watchAll();
 
   Stream<TechniciansCacheData?> watchById(String id) =>
