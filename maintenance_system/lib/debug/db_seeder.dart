@@ -46,19 +46,20 @@ class DevSeeder {
         String status,
         DateTime? openedAt,
         DateTime? completedAt,
+        bool isCompleted, 
       })>[
         // Unopened / outstanding (not opened yet)
-        (aircraftId: 'G-ABCD', status: 'outstanding', openedAt: null, completedAt: null),
-        (aircraftId: 'G-EFGH', status: 'outstanding', openedAt: null, completedAt: null),
+        (aircraftId: 'G-ABCD', status: 'outstanding', openedAt: null, completedAt: null, isCompleted: false),
+        (aircraftId: 'G-EFGH', status: 'outstanding', openedAt: null, completedAt: null, isCompleted: false),
 
         // Opened / in progress
-        (aircraftId: 'G-IJKL', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 6)), completedAt: null),
-        (aircraftId: 'G-MNOP', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 4)), completedAt: null),
-        (aircraftId: 'G-QRST', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 2)), completedAt: null),
+        (aircraftId: 'G-IJKL', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 6)), completedAt: null, isCompleted: false),
+        (aircraftId: 'G-MNOP', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 4)), completedAt: null, isCompleted: false),
+        (aircraftId: 'G-QRST', status: 'in_progress', openedAt: now.subtract(const Duration(hours: 2)), completedAt: null, isCompleted: false),
 
         // Completed (awaiting sync)
-        (aircraftId: 'G-UVWX', status: 'completed_awaiting_sync', openedAt: now.subtract(const Duration(days: 1, hours: 3)), completedAt: now.subtract(const Duration(days: 1, hours: 1))),
-        (aircraftId: 'G-YZ12', status: 'completed_awaiting_sync', openedAt: now.subtract(const Duration(days: 2, hours: 5)), completedAt: now.subtract(const Duration(days: 2, hours: 2))),
+        (aircraftId: 'G-UVWX', status: 'completed_awaiting_sync', openedAt: now.subtract(const Duration(days: 1, hours: 3)), completedAt: now.subtract(const Duration(days: 1, hours: 1)), isCompleted: true),
+        (aircraftId: 'G-YZ12', status: 'completed_awaiting_sync', openedAt: now.subtract(const Duration(days: 2, hours: 5)), completedAt: now.subtract(const Duration(days: 2, hours: 2)), isCompleted: true),
       ];
 
       final inspectionIds = <String>[];
@@ -75,12 +76,16 @@ class DevSeeder {
             id: inspectionId,
             aircraftId: seed.aircraftId,
             technicianId: drift.Value(technicianId),
-            openedAt: drift.Value(seed.openedAt),
-            completedAt: drift.Value(seed.completedAt),
-          ),
-        );
-      }
+            openedAt: seed.openedAt == null
+              ? const drift.Value.absent()
+              : drift.Value(seed.openedAt),
 
+            completedAt: seed.completedAt == null
+              ? const drift.Value.absent()
+              : drift.Value(seed.completedAt),
+            isCompleted: drift.Value(seed.isCompleted))
+          ); 
+        
       // 3) Insert 2–3 tasks per inspection
       const taskPool = <String>[
         'Check brakes',
@@ -119,8 +124,9 @@ class DevSeeder {
               title: title,
               
               isCompleted: drift.Value(isCompleted),
-            ),
-          );
+              ),
+            );
+          }
         }
       }
     });
