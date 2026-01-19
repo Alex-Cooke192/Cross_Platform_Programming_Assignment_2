@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:maintenance_system/core/data/local/daos/inspection_dao.dart';
 import '../app_database.dart';
 
 class InspectionRepository {
@@ -27,6 +28,15 @@ class InspectionRepository {
 
   Stream<int> watchCompletedCount() =>
       db.inspectionDao.watchCompleted().map((rows) => rows.length);
+
+  Stream<int> watchUnopenedByTechnician(String technicianId) => 
+      db.inspectionDao.watchUnopenedByTechnician(technicianId).map((rows) => rows.length); 
+  
+  Stream<int> watchInProgressByTechnician(String technicianId) =>
+      db.inspectionDao.watchInProgressByTechnician(technicianId).map((rows) => rows.length); 
+
+  Stream<int> watchCompletedByTechnician(String technicianId) =>
+      db.inspectionDao.watchCompletedByTechnician(technicianId).map((rows) => rows.length); 
 
   // ---- Writes ----
 

@@ -41,6 +41,37 @@ class InspectionDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
+  Stream<List<Inspection>> watchByTechnician(String technicianId) {
+  return (select(inspections)
+        ..where((tbl) => tbl.technicianId.equals(technicianId)))
+      .watch();
+  }
+
+  Stream<List<Inspection>> watchUnopenedByTechnician(String technicianId) {
+  return (select(inspections)
+        ..where((tbl) =>
+            tbl.technicianId.equals(technicianId) &
+            tbl.openedAt.isNull()))
+      .watch();
+  }
+
+  Stream<List<Inspection>> watchInProgressByTechnician(String technicianId) {
+  return (select(inspections)
+        ..where((tbl) =>
+            tbl.technicianId.equals(technicianId) &
+            tbl.openedAt.isNotNull() &
+            tbl.completedAt.isNull()))
+      .watch();
+  }
+
+  Stream<List<Inspection>> watchCompletedByTechnician(String technicianId) {
+  return (select(inspections)
+        ..where((tbl) =>
+            tbl.technicianId.equals(technicianId) &
+            tbl.completedAt.isNotNull()))
+      .watch();
+  }
+
   /// Watch a single inspection by id (for details screen)
   Stream<Inspection?> watchById(String id) {
     return (select(inspections)..where((t) => t.id.equals(id)))
