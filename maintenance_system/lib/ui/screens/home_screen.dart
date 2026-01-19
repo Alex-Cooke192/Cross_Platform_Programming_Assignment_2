@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maintenance_system/ui/widgets/logout_button.dart';
 import 'package:maintenance_system/ui/widgets/signed_in_as.dart';
 import 'package:provider/provider.dart';
 
@@ -33,6 +34,7 @@ class HomeScreen extends StatelessWidget {
           SizedBox(width: 12),
         ],
       ),
+      floatingActionButton: LogoutButton(),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
