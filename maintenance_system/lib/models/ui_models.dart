@@ -100,3 +100,13 @@ extension InspectionUiStatusLabel on InspectionUiStatus {
     }
   }
 }
+
+class TechnicianUi {
+  final String id;
+  final String name;
+
+  const TechnicianUi({
+    required this.id,
+    required this.name,
+  });
+}
