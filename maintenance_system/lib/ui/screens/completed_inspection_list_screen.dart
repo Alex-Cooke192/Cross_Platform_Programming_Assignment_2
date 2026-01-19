@@ -41,7 +41,7 @@ class CompletedInspectionListScreen extends StatelessWidget {
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               itemCount: inspections.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final insp = inspections[index];
                 final tasks = tasksByInspectionId[insp.id] ?? const <TaskUi>[];

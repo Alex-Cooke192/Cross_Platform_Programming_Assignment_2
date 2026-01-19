@@ -16,9 +16,9 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final inspectionRepo = context.read<InspectionRepository>();
 
-    final UnopenedCount$ = inspectionRepo.watchUnopenedCount(); 
-    final OpenCount$ = inspectionRepo.watchOpenCount();
-    final CompletedCount$ = inspectionRepo.watchCompletedCount();
+    final unopenedCount$ = inspectionRepo.watchUnopenedCount(); 
+    final openCount$ = inspectionRepo.watchOpenCount();
+    final completedCount$ = inspectionRepo.watchCompletedCount();
 
     return Scaffold(
       appBar: AppBar(
@@ -47,7 +47,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             StreamBuilder<int>(
-              stream: UnopenedCount$,
+              stream: unopenedCount$,
               initialData: 0,
               builder: (context, snap) {
                 final value = snap.data ?? 0;
@@ -70,7 +70,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             StreamBuilder<int>(
-              stream: OpenCount$,
+              stream: openCount$,
               initialData: 0,
               builder: (context, snap) {
                 final value = snap.data ?? 0;
@@ -93,7 +93,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             StreamBuilder<int>(
-              stream: CompletedCount$,
+              stream: completedCount$,
               initialData: 0,
               builder: (context, snap) {
                 final value = snap.data ?? 0;

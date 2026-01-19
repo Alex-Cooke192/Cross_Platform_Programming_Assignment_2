@@ -49,7 +49,7 @@ class OpenedInspectionListScreen extends StatelessWidget {
                   ? const _EmptyState()
                   : ListView.separated(
                       itemCount: count,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final inspection = inspections[index];
