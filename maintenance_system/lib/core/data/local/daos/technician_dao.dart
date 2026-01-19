@@ -34,6 +34,12 @@ class TechnicianDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
   }
 
+  Future<bool> nameExists(String name) async {
+    final row = await (select(techniciansCache)
+          ..where((t) => t.name.equals(name)))
+        .getSingleOrNull();
+    return row != null;
+  }
 
   Future<void> upsertOne({required String id, required String name}) {
     return into(techniciansCache).insertOnConflictUpdate(

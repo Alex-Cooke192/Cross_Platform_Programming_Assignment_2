@@ -63,7 +63,7 @@ class UnopenedInspectionDetailsScreen extends StatelessWidget {
                     )
                   : ListView.separated(
                       itemCount: tasks.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final task = tasks[index];
