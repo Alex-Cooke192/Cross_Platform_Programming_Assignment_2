@@ -26,9 +26,12 @@ class InspectionDao extends DatabaseAccessor<AppDatabase>
 }
 
   /// Watch only open (not completed) inspections.
-  Stream<List<Inspection>> watchOpen() {
+  Stream<List<Inspection>> watchInProgress() {
     return (select(inspections)
-          ..where((t) => t.isCompleted.equals(false))
+          ..where((t) => 
+            t.isCompleted.equals(false) & 
+            t.openedAt.isNotNull() & 
+            t.completedAt.isNull()) 
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
         .watch();
   }
@@ -39,6 +42,37 @@ class InspectionDao extends DatabaseAccessor<AppDatabase>
           ..where((t) => t.isCompleted.equals(true))
           ..orderBy([(t) => OrderingTerm.desc(t.completedAt)]))
         .watch();
+  }
+
+  Stream<List<Inspection>> watchByTechnician(String technicianId) {
+  return (select(inspections)
+        ..where((tbl) => tbl.technicianId.equals(technicianId)))
+      .watch();
+  }
+
+  Stream<List<Inspection>> watchUnopenedByTechnician(String technicianId) {
+  return (select(inspections)
+        ..where((tbl) =>
+            tbl.technicianId.equals(technicianId) &
+            tbl.openedAt.isNull()))
+      .watch();
+  }
+
+  Stream<List<Inspection>> watchInProgressByTechnician(String technicianId) {
+  return (select(inspections)
+        ..where((tbl) =>
+            tbl.technicianId.equals(technicianId) &
+            tbl.openedAt.isNotNull() &
+            tbl.completedAt.isNull()))
+      .watch();
+  }
+
+  Stream<List<Inspection>> watchCompletedByTechnician(String technicianId) {
+  return (select(inspections)
+        ..where((tbl) =>
+            tbl.technicianId.equals(technicianId) &
+            tbl.completedAt.isNotNull()))
+      .watch();
   }
 
   /// Watch a single inspection by id (for details screen)

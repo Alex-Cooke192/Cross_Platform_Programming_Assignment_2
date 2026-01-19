@@ -15,6 +15,7 @@ class Inspections extends Table {
 
   DateTimeColumn get completedAt => dateTime().nullable()();
 
+  // FK to technicians cache table
   TextColumn get technicianId => text().nullable()();
 
   @override
