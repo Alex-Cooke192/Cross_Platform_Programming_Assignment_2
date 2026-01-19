@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/data/local/repositories/technician_repository.dart';
 import 'core/session/current_technician.dart';
 
-import 'ui/screens/home_screen.dart';
+import 'ui/screens/login_screen.dart';
 
 class AppRoot extends StatefulWidget {
   const AppRoot({super.key});
@@ -41,6 +41,6 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   Widget build(BuildContext context) {
-    return const HomeScreen();
+    return const LoginScreen();
   }
 }
