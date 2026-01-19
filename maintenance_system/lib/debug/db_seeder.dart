@@ -88,45 +88,37 @@ class DevSeeder {
         
       // 3) Insert 2–3 tasks per inspection
       const taskPool = <String>[
-        'Check brakes',
-        'Check lights',
-        'Inspect tires',
-        'Check oil level',
-        'Inspect flaps',
-        'Test radios',
-        'Verify instruments',
-        'Check hydraulics',
-        'Inspect landing gear',
-        'Check battery',
-        'Inspect fuel lines',
-        'Check cabin safety kit',
+      'Check brakes',
+      'Check lights',
+      'Inspect tires',
+      'Check oil level',
+      'Inspect flaps',
+      'Test radios',
+      'Verify instruments',
+      'Check hydraulics',
+      'Inspect landing gear',
+      'Check battery',
+      'Inspect fuel lines',
+      'Check cabin safety kit',
       ];
 
-      var taskCursor = 0;
-
-      for (var i = 0; i < inspectionIds.length; i++) {
-        final inspectionId = inspectionIds[i];
-        final insp = seededInspections[i];
-
         final tasksForThisInspection = i < 3 ? 3 : 2;
+        var taskCursor = 0; // move outside the inspections loop if you want global rotation
 
         for (var t = 0; t < tasksForThisInspection; t++) {
           final title = taskPool[taskCursor % taskPool.length];
           taskCursor++;
 
-          // Mark completed fields for completed inspections.
-          final isCompleted = insp.status == 'completed_awaiting_sync';
+          final isCompleted = seed.status == 'completed_awaiting_sync';
 
           await db.into(db.tasks).insert(
             TasksCompanion.insert(
               id: _uuid.v4(),
               inspectionId: inspectionId,
               title: title,
-              
               isCompleted: drift.Value(isCompleted),
-              ),
-            );
-          }
+            ),
+          );
         }
       }
     });
