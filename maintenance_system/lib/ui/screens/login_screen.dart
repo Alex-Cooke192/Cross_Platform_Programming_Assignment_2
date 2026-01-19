@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maintenance_system/core/session/current_technician.dart';
 import 'package:provider/provider.dart';
 import 'package:maintenance_system/core/data/local/repositories/technician_repository.dart';
 import '../screens/home_screen.dart';
@@ -92,13 +93,14 @@ class _LoginContainerState extends State<LoginContainer> {
       final tech = await techRepo.watchByIdUi(techId).first;
 
       if (!mounted) return;
-      if (tech == null) return;
+      if (tech == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No technician found for ID: $techId"))
+        ); 
+        return; 
+      }
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => HomeScreen(),
-        ),
-      );
+      context.read<CurrentTechnician>().setTechnician(tech.id); 
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
