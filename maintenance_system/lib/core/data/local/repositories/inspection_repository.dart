@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:maintenance_system/core/data/local/daos/inspection_dao.dart';
 import '../app_database.dart';
 
 class InspectionRepository {
