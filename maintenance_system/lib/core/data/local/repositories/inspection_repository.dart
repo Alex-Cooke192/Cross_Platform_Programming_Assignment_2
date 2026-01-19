@@ -13,7 +13,7 @@ class InspectionRepository {
 
   Stream<List<Inspection>> watchUnopened() => db.inspectionDao.watchUnopened();
 
-  Stream<List<Inspection>> watchOpen() => db.inspectionDao.watchOpen();
+  Stream<List<Inspection>> watchOpen() => db.inspectionDao.watchInProgress();
 
   Stream<List<Inspection>> watchCompleted() => db.inspectionDao.watchCompleted();
 
@@ -24,7 +24,7 @@ class InspectionRepository {
       db.inspectionDao.watchUnopened().map((rows) => rows.length);
 
   Stream<int> watchOpenCount() =>
-      db.inspectionDao.watchOpen().map((rows) => rows.length);
+      db.inspectionDao.watchInProgress().map((rows) => rows.length);
 
   Stream<int> watchCompletedCount() =>
       db.inspectionDao.watchCompleted().map((rows) => rows.length);

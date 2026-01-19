@@ -26,9 +26,12 @@ class InspectionDao extends DatabaseAccessor<AppDatabase>
 }
 
   /// Watch only open (not completed) inspections.
-  Stream<List<Inspection>> watchOpen() {
+  Stream<List<Inspection>> watchInProgress() {
     return (select(inspections)
-          ..where((t) => t.isCompleted.equals(false))
+          ..where((t) => 
+            t.isCompleted.equals(false) & 
+            t.openedAt.isNotNull() & 
+            t.completedAt.isNull()) 
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
         .watch();
   }
