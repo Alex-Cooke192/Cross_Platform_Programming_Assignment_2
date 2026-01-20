@@ -10,6 +10,9 @@ class Inspections extends Table {
   DateTimeColumn get createdAt =>
       dateTime().withDefault(currentDateAndTime)();
 
+  DateTimeColumn get updatedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
   BoolColumn get isCompleted =>
       boolean().withDefault(const Constant(false))();
 
@@ -17,6 +20,9 @@ class Inspections extends Table {
 
   // FK to technicians cache table
   TextColumn get technicianId => text().nullable()();
+
+  TextColumn get syncStatus =>
+      text().withDefault(const Constant('pending'))();
 
   @override
   Set<Column> get primaryKey => {id};
