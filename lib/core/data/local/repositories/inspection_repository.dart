@@ -9,16 +9,13 @@ class InspectionRepository {
   // ---- Reads (Streams) ----
 
   Stream<List<Inspection>> watchAll() => db.inspectionDao.watchAll();
-
   Stream<List<Inspection>> watchUnopened() => db.inspectionDao.watchUnopened();
-
   Stream<List<Inspection>> watchOpen() => db.inspectionDao.watchInProgress();
-
   Stream<List<Inspection>> watchCompleted() => db.inspectionDao.watchCompleted();
-
   Stream<Inspection?> watchById(String id) => db.inspectionDao.watchById(id);
 
   // ---- Reads (Counts) ----
+
   Stream<int> watchUnopenedCount() =>
       db.inspectionDao.watchUnopened().map((rows) => rows.length);
 
@@ -28,16 +25,17 @@ class InspectionRepository {
   Stream<int> watchCompletedCount() =>
       db.inspectionDao.watchCompleted().map((rows) => rows.length);
 
-  Stream<int> watchUnopenedByTechnician(String technicianId) => 
-      db.inspectionDao.watchUnopenedByTechnician(technicianId).map((rows) => rows.length); 
-  
+  Stream<int> watchUnopenedByTechnician(String technicianId) =>
+      db.inspectionDao.watchUnopenedByTechnician(technicianId).map((rows) => rows.length);
+
   Stream<int> watchInProgressByTechnician(String technicianId) =>
-      db.inspectionDao.watchInProgressByTechnician(technicianId).map((rows) => rows.length); 
+      db.inspectionDao.watchInProgressByTechnician(technicianId).map((rows) => rows.length);
 
   Stream<int> watchCompletedByTechnician(String technicianId) =>
-      db.inspectionDao.watchCompletedByTechnician(technicianId).map((rows) => rows.length); 
+      db.inspectionDao.watchCompletedByTechnician(technicianId).map((rows) => rows.length);
 
-  // ---- Writes ----
+  // ---- Writes (Local user actions) ----
+  // DAOs now handle updatedAt + syncStatus='pending'
 
   Future<void> createInspection({
     required String id,
@@ -51,51 +49,43 @@ class InspectionRepository {
     );
   }
 
-  Future<void> setOpened(String inspectionId) async {
-    await db.inspectionDao.setOpened(inspectionId);
-  }
+  Future<void> setOpened(String inspectionId) => db.inspectionDao.setOpened(inspectionId);
 
-  Future<void> setCompleted(String inspectionId, bool completed) async {
-    await db.inspectionDao.setCompleted(inspectionId, completed);
-  }
+  Future<void> setCompleted(String inspectionId, bool completed) =>
+      db.inspectionDao.setCompleted(inspectionId, completed);
 
-  Future<void> assignTechnician(String inspectionId, String? technicianId) async {
-    await db.inspectionDao.setTechnician(inspectionId, technicianId);
-  }
+  Future<void> assignTechnician(String inspectionId, String? technicianId) =>
+      db.inspectionDao.setTechnician(inspectionId, technicianId);
 
-  Future<void> deleteInspection(String inspectionId) async {
-    await db.inspectionDao.deleteById(inspectionId);
-  }
+  Future<void> deleteInspection(String inspectionId) =>
+      db.inspectionDao.deleteById(inspectionId);
 
+  Future<void> markCompleted(String inspectionId) => setCompleted(inspectionId, true);
 
-  // Mark completed/open functions 
-  // These are wrappers around the 'set' functions -> 
-  // they require a bool so can change the state both ways, 
-  // whereas these wrappers are specific instances of the above methods
-  Future<void> markCompleted(String inspectionId) =>
-      setCompleted(inspectionId, true);
+  Future<void> markOpen(String inspectionId) => setOpened(inspectionId);
 
-  Future<void> markOpen(String inspectionId) =>
-      setOpened(inspectionId);
+  // ---- Sync (Server -> Local) ----
+  // IMPORTANT: repo should not bypass DAO, because DAO sets syncStatus etc.
 
-  // Updates a local inspection with the data from the server (update if it exists, insert if not)
   Future<void> upsertFromServer({
     required String id,
     required String aircraftId,
     required DateTime createdAt,
+    required DateTime updatedAt,
     required bool isCompleted,
+    DateTime? openedAt,
     DateTime? completedAt,
     String? technicianId,
-  }) async {
-    await db.into(db.inspections).insertOnConflictUpdate(
-      InspectionsCompanion(
-        id: Value(id),
-        aircraftId: Value(aircraftId),
-        createdAt: Value(createdAt),
-        isCompleted: Value(isCompleted),
-        completedAt: Value(completedAt),
-        technicianId: Value(technicianId),
-      ),
+  }) {
+    return db.inspectionDao.upsertFromServer(
+      id: id,
+      aircraftId: aircraftId,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      isCompleted: isCompleted,
+      openedAt: openedAt,
+      completedAt: completedAt,
+      technicianId: technicianId,
     );
   }
 }

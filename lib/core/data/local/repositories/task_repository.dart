@@ -7,14 +7,13 @@ class TaskRepository {
 
   // ---- Reads (Streams) ----
 
-  // Watch all tasks by inspection ID (inspection details screen)
   Stream<List<Task>> watchByInspectionId(String inspectionId) =>
       db.taskDao.watchByInspectionId(inspectionId);
 
-  // Watch specific task by ID (task details screen)
   Stream<Task?> watchById(String taskId) => db.taskDao.watchById(taskId);
 
-  // ---- Writes ----
+  // ---- Writes (Local user actions) ----
+  // DAOs now handle updatedAt & syncStatus='pending'
 
   Future<void> createTask({
     required String id,
@@ -28,33 +27,51 @@ class TaskRepository {
     );
   }
 
-  Future<void> setCompleted(String taskId, bool completed) async {
-    await db.taskDao.setCompleted(taskId, completed);
-  }
+  Future<void> setCompleted(String taskId, bool completed) =>
+      db.taskDao.setCompleted(taskId, completed);
 
   Future<void> updateResultAndNotes({
     required String taskId,
     String? result,
     String? notes,
-  }) async {
-    await db.taskDao.updateResultAndNotes(
+  }) {
+    return db.taskDao.updateResultAndNotes(
       taskId: taskId,
       result: result,
       notes: notes,
     );
   }
 
-  Future<void> deleteTask(String taskId) async {
-    await db.taskDao.deleteById(taskId);
-  }
+  Future<void> deleteTask(String taskId) => db.taskDao.deleteById(taskId);
 
-  Future<void> deleteTasksForInspection(String inspectionId) async {
-    await db.taskDao.deleteByInspectionId(inspectionId);
-  }
-
-  // ---- Convenience helpers ----
+  Future<void> deleteTasksForInspection(String inspectionId) =>
+      db.taskDao.deleteByInspectionId(inspectionId);
 
   Future<void> markCompleted(String taskId) => setCompleted(taskId, true);
 
   Future<void> markOpen(String taskId) => setCompleted(taskId, false);
+
+  // ---- Sync (Server -> Local) ----
+
+  Future<void> upsertFromServer({
+    required String id,
+    required String inspectionId,
+    required String title,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required bool isCompleted,
+    String? result,
+    String? notes,
+  }) {
+    return db.taskDao.upsertFromServer(
+      id: id,
+      inspectionId: inspectionId,
+      title: title,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      isCompleted: isCompleted,
+      result: result,
+      notes: notes,
+    );
+  }
 }
