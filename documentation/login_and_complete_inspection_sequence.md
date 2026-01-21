@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
   autonumber
 
@@ -64,4 +65,4 @@ sequenceDiagram
   LDB-->>DAOs: OK
   DAOs-->>Repos: OK
   Repos-->>UI: Inspection completed
-
+```
