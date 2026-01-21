@@ -1,4 +1,3 @@
-```mermaid
 sequenceDiagram
   autonumber
 
@@ -8,12 +7,13 @@ sequenceDiagram
   participant DAOs as DAOs
   participant LDB as Local DB (Drift / SQLite)
 
+
   %% Login 
   Tech->>UI: Enter technician name / ID
   UI->>Repos: login(technicianId)
   Repos->>DAOs: getTechnician(technicianId)
   DAOs->>LDB: SELECT * FROM technicians_cache\nWHERE id = ?
-  LDB-->>DAOs: technician row
+  LDB-->>DAOs: techniciansCache
   DAOs-->>Repos: Technician model
   Repos-->>UI: Login successful
 
@@ -64,5 +64,4 @@ sequenceDiagram
   LDB-->>DAOs: OK
   DAOs-->>Repos: OK
   Repos-->>UI: Inspection completed
-Appendix 1.2 
-```
+
