@@ -26,15 +26,69 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forExecutor(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (Migrator m) async {
+          // Fresh install: create everything with the latest schema
+          await m.createAll();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          // 1 -> 2: add sync fields
+          if (from < 2) {
+            // Inspections: add updated_at + sync_status
+            await m.addColumn(inspections, inspections.updatedAt);
+            await m.addColumn(inspections, inspections.syncStatus);
+
+            // Tasks: add created_at + updated_at + sync_status
+            await m.addColumn(tasks, tasks.createdAt);
+            await m.addColumn(tasks, tasks.updatedAt);
+            await m.addColumn(tasks, tasks.syncStatus);
+
+            // TechniciansCache: add created_at + updated_at + sync_status
+            await m.addColumn(techniciansCache, techniciansCache.createdAt);
+            await m.addColumn(techniciansCache, techniciansCache.updatedAt);
+            await m.addColumn(techniciansCache, techniciansCache.syncStatus);
+
+            // Backfill older rows (important, because addColumn creates nulls on existing rows)
+            final now = DateTime.now();
+
+            // Set defaults for inspections
+            await (update(inspections)).write(
+              InspectionsCompanion(
+                updatedAt: Value(now),
+                syncStatus: const Value('synced'),
+              ),
+            );
+
+            // Set defaults for tasks
+            await (update(tasks)).write(
+              TasksCompanion(
+                createdAt: Value(now),
+                updatedAt: Value(now),
+                syncStatus: const Value('synced'),
+              ),
+            );
+
+            // Set defaults for technicians_cache
+            await (update(techniciansCache)).write(
+              TechniciansCacheCompanion(
+                createdAt: Value(now),
+                updatedAt: Value(now),
+                syncStatus: const Value('synced'),
+              ),
+            );
+          }
+        },
+      );
 }
 
-extension DevReset on AppDatabase { 
-  /// DEV ONLY: Wipes seeded tables and recreates the demo dataset 
-  /// exactly as defined in DebugSeeder.seedIfEmpty(). 
+extension DevReset on AppDatabase {
   Future<void> devResetAndReseedDemoData() async {
-    // Need to add logic (schema dependent) 
-  } }
+    // Keep for later
+  }
+}
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {

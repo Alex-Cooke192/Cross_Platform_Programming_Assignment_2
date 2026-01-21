@@ -8,6 +8,8 @@ import '../../core/data/local/repositories/inspection_repository.dart';
 import 'unopened_inspection_list_screen.dart';
 import 'opened_inspection_list_screen.dart';
 import 'completed_inspection_list_screen.dart';
+import '../dialogs/show_attempt_sync_dialog.dart';
+import 'package:maintenance_system/core/data/sync/sync_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -29,9 +31,29 @@ class HomeScreen extends StatelessWidget {
           padding: EdgeInsets.only(left: 12),
           child: SignedInAsContainer(),
         ),
-        actions: const [
-          Icon(Icons.sync),
-          SizedBox(width: 12),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            onPressed: () async {
+              final apiKey = await showAttemptSyncDialog(context);
+              if (apiKey == null) return;
+
+              try {
+                await context.read<SyncService>().syncNow(apiKey: apiKey);
+
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Sync successful')),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Sync failed: $e')),
+                );
+              }
+            },
+          ), 
+          const SizedBox(width: 12),
         ],
       ),
       floatingActionButton: LogoutButton(),

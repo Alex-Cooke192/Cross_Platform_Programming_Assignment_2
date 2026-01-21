@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maintenance_system/app_root.dart';
 import 'package:maintenance_system/core/data/local/repositories/task_repository.dart';
 import 'package:provider/provider.dart';
+import 'package:maintenance_system/core/data/sync/sync_service.dart';
 
 import 'core/data/local/app_database.dart';
 import 'core/data/local/repositories/inspection_repository.dart';
@@ -12,10 +13,12 @@ import 'config/app_themes.dart';
 
 class App extends StatelessWidget {
   final AppDatabase database;
+  final SyncService syncService; 
 
   const App({
     super.key,
     required this.database,
+    required this.syncService, 
   });
 
   @override
@@ -37,6 +40,7 @@ class App extends StatelessWidget {
         Provider(
           create: (_) => TaskRepository(database), 
         ), 
+        Provider<SyncService>.value(value: syncService),
       ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeController.themeMode,

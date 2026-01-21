@@ -11,6 +11,8 @@ class DevSeeder {
 
   Future<void> reseed() async {
     await db.transaction(() async {
+
+      final now = DateTime.now(); 
       // Wipe tables (order matters if you add FKs later)
       await db.delete(db.tasks).go();
       await db.delete(db.inspections).go();
@@ -34,12 +36,12 @@ class DevSeeder {
           TechniciansCacheCompanion.insert(
             id: id,
             name: name,
+            syncStatus: const drift.Value('pending'),
+            updatedAt: drift.Value(now),
           ),
         );
       }
 
-      // 2) Build 7 inspections with a spread of states
-      final now = DateTime.now();
 
       final seededInspections = <({
         String aircraftId,
@@ -76,15 +78,13 @@ class DevSeeder {
             id: inspectionId,
             aircraftId: seed.aircraftId,
             technicianId: drift.Value(technicianId),
-            openedAt: seed.openedAt == null
-              ? const drift.Value.absent()
-              : drift.Value(seed.openedAt),
-
-            completedAt: seed.completedAt == null
-              ? const drift.Value.absent()
-              : drift.Value(seed.completedAt),
-            isCompleted: drift.Value(seed.isCompleted))
-          ); 
+            openedAt: seed.openedAt == null ? const drift.Value.absent() : drift.Value(seed.openedAt),
+            completedAt: seed.completedAt == null ? const drift.Value.absent() : drift.Value(seed.completedAt),
+            isCompleted: drift.Value(seed.isCompleted),
+            syncStatus: const drift.Value('pending'),
+            updatedAt: drift.Value(now),
+          ),
+        );
         
       // 3) Insert 2–3 tasks per inspection
       const taskPool = <String>[
@@ -117,6 +117,8 @@ class DevSeeder {
               inspectionId: inspectionId,
               title: title,
               isCompleted: drift.Value(isCompleted),
+              syncStatus: const drift.Value('pending'),
+              updatedAt: drift.Value(now),
             ),
           );
         }

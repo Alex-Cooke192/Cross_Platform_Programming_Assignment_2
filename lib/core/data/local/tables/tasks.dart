@@ -17,6 +17,16 @@ class Tasks extends Table {
   TextColumn get result => text().nullable()();
   TextColumn get notes => text().nullable()();
 
+  // Timestamps for sync
+  DateTimeColumn get createdAt =>
+      dateTime().clientDefault(() => DateTime.now())();
+
+  DateTimeColumn get updatedAt =>
+      dateTime().clientDefault(() => DateTime.now())();
+
+  TextColumn get syncStatus =>
+      text().withDefault(const Constant('pending'))();
+
   @override
   Set<Column> get primaryKey => {id}; 
 }
