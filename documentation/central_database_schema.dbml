@@ -1,0 +1,52 @@
+// Central DB schema (server/system-of-record)
+// UUIDs stored as TEXT, timestamps as ISO-8601 TEXT.
+
+Table technicians {
+  id text [pk, note: "UUID (matches client)"]
+  username text [not null, unique]
+  display_name text
+  role text [not null, default: "technician", note: "admin|technician (extend as needed)"]
+
+  created_at text [not null, default: "CURRENT_TIMESTAMP"]
+  updated_at text [not null, default: "CURRENT_TIMESTAMP"]
+}
+
+Table inspections {
+  id text [pk, note: "UUID"]
+  aircraft_id text [not null, note: "e.g. G-ABCD"]
+  status text [not null, note: "outstanding|in_progress|completed"]
+  opened_at text
+  completed_at text
+
+  technician_id text [note: "Owner/creator (optional)"]
+
+  created_at text [not null, default: "CURRENT_TIMESTAMP"]
+  updated_at text [not null, default: "CURRENT_TIMESTAMP"]
+
+  indexes {
+    status [name: "idx_inspections_status"]
+  }
+}
+
+Table tasks {
+  id text [pk, note: "UUID"]
+  inspection_id text [not null]
+  title text [not null]
+  description text
+  is_complete int [not null, default: 0, note: "0/1"]
+  result text
+  notes text
+  completed_at text
+
+  created_at text [not null, default: "CURRENT_TIMESTAMP"]
+  updated_at text [not null, default: "CURRENT_TIMESTAMP"]
+
+  indexes {
+    inspection_id [name: "idx_tasks_inspection_id"]
+    is_complete [name: "idx_tasks_complete"]
+  }
+}
+
+// Relationships
+Ref: inspections.technician_id > technicians.id [delete: set null]
+Ref: tasks.inspection_id > inspections.id [delete: cascade]

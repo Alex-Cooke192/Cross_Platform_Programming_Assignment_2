@@ -1,0 +1,53 @@
+// dbdiagram.io (DBML) pseudocode for your local Drift DB
+
+Table inspections {
+  id           text      [pk]
+  aircraft_id  text      [not null]
+
+  opened_at    datetime  [null]
+  created_at   datetime  [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at   datetime  [not null]
+
+  is_completed boolean   [not null, default: false]
+  completed_at datetime  [null]
+
+  // FK to technicians cache table
+  technician_id text     [null]
+
+  sync_status   text     [not null, default: 'pending']
+}
+
+Table tasks {
+  id            text     [pk] // UUID string
+  inspection_id text     [not null]
+
+  title         text     [not null]
+
+  is_completed  boolean  [not null, default: false]
+  result        text     [null]
+  notes         text     [null]
+
+  created_at    datetime [not null]
+  updated_at    datetime [not null]
+
+  sync_status   text     [not null, default: 'pending']
+
+  Indexes {
+    (inspection_id) [name: "tasks_inspection_id"]
+  }
+}
+
+Table technicians_cache {
+  id          text     [pk] // UUID from server / domain
+  name        text     [not null]
+
+  created_at  datetime [not null]
+  updated_at  datetime [not null]
+
+  sync_status text     [not null, default: 'pending']
+}
+
+
+// Relationships (inferred from your comments/column names)
+Ref: tasks.inspection_id > inspections.id
+Ref: inspections.technician_id > technicians_cache.id
