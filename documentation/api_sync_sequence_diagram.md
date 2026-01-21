@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
   autonumber
 
@@ -86,3 +87,4 @@ sequenceDiagram
       end
     end
   end
+  ```

@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
   autonumber
 
@@ -64,3 +65,4 @@ sequenceDiagram
   DAOs-->>Repos: OK
   Repos-->>UI: Inspection completed
 Appendix 1.2 
+```
