@@ -11,7 +11,7 @@ class Inspections extends Table {
       dateTime().withDefault(currentDateAndTime)();
 
   DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+      dateTime().clientDefault(() => DateTime.now())();
 
   BoolColumn get isCompleted =>
       boolean().withDefault(const Constant(false))();

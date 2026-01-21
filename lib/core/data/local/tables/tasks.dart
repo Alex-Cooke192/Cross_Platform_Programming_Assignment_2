@@ -19,10 +19,10 @@ class Tasks extends Table {
 
   // Timestamps for sync
   DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+      dateTime().clientDefault(() => DateTime.now())();
 
   DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+      dateTime().clientDefault(() => DateTime.now())();
 
   TextColumn get syncStatus =>
       text().withDefault(const Constant('pending'))();

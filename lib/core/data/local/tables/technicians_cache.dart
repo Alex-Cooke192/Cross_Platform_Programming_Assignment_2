@@ -5,10 +5,10 @@ class TechniciansCache extends Table {
   TextColumn get name => text()(); // Display name
 
   DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+      dateTime().clientDefault(() => DateTime.now())();
 
   DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+      dateTime().clientDefault(() => DateTime.now())();
 
   /// NEW: sync state
   TextColumn get syncStatus =>
