@@ -24,6 +24,17 @@ class TaskDao extends DatabaseAccessor<AppDatabase> with _$TaskDaoMixin {
     return (select(tasks)..where((t) => t.id.equals(id))).watchSingleOrNull();
   }
 
+    Stream<List<Task>> watchByInspectionIds(List<String> inspectionIds) {
+    if (inspectionIds.isEmpty) {
+      // Important: avoid invalid SQL: WHERE IN ()
+      return Stream.value(const []);
+    }
+
+    return (select(tasks)
+          ..where((t) => t.inspectionId.isIn(inspectionIds)))
+        .watch();
+  }
+
   // ---- Writes (Local user actions) ----
 
   Future<void> insertTask({

@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import '../app_database.dart';
 
 class InspectionRepository {
@@ -12,7 +11,7 @@ class InspectionRepository {
   Stream<List<Inspection>> watchUnopened() => db.inspectionDao.watchUnopened();
   Stream<List<Inspection>> watchOpen() => db.inspectionDao.watchInProgress();
   Stream<List<Inspection>> watchCompleted() => db.inspectionDao.watchCompleted();
-  Stream<Inspection?> watchById(String id) => db.inspectionDao.watchById(id);
+  Stream<Inspection?> watchById(String id) => db.inspectionDao.watchById(id); 
 
   // ---- Reads (Counts) ----
 

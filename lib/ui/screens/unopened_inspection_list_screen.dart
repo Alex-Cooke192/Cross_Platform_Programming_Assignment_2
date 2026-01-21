@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/data/local/repositories/inspection_repository.dart';
+import '../../core/data/local/repositories/task_repository.dart';
 
 import '../../models/ui_models.dart';
 import '../../models/inspection_mapper.dart';
+import '../../models/task_mapper.dart';
 import 'unopened_inspection_details_screen.dart';
 
 class UnopenedInspectionListScreen extends StatelessWidget {
@@ -67,39 +69,57 @@ class UnopenedInspectionListContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = context.read<InspectionRepository>();
+    final inspectionsRepo = context.read<InspectionRepository>();
+    final tasksRepo = context.read<TaskRepository>();
 
-    final unopened$ =
-        repo.watchUnopened().map((rows) => rows.toUiList());
+    final unopened$ = inspectionsRepo.watchUnopened().map((rows) => rows.toUiList());
+    final inProgress$ = inspectionsRepo.watchOpenCount();
+
     return StreamBuilder<List<InspectionUi>>(
       stream: unopened$,
       initialData: const [],
       builder: (context, inspectionsSnap) {
         final inspections = inspectionsSnap.data ?? const [];
-        
-        final inProgress$ = 
-          repo.watchOpenCount(); 
+        final inspectionIds = inspections.map((i) => i.id).toList();
+
+        final tasksByInspectionId$ = tasksRepo
+            .watchByInspectionIds(inspectionIds) 
+            .map((tasks) {
+              final map = <String, List<TaskUi>>{};
+              for (final t in tasks.toUiList()) {
+                (map[t.inspectionId] ??= []).add(t);
+              }
+              return map;
+            });
+
         return StreamBuilder<int>(
-          stream: inProgress$, 
+          stream: inProgress$,
           initialData: 0,
           builder: (context, countSnap) {
-            final inProgressCount = countSnap.data ?? 0; 
-        
-            return UnopenedInspectionListScreen(
-              inspections: inspections,
-              inProgressCount: inProgressCount,
-              onTapInspection: (inspection) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => UnopenedInspectionDetailsContainer(
-                      inspectionId: inspection.id,
-                    ),
-                  ),
+            final inProgressCount = countSnap.data ?? 0;
+
+            return StreamBuilder<Map<String, List<TaskUi>>>(
+              stream: tasksByInspectionId$,
+              initialData: const {},
+              builder: (context, tasksSnap) {
+                return UnopenedInspectionListScreen(
+                  inspections: inspections,
+                  inProgressCount: inProgressCount,
+                  tasksByInspectionId: tasksSnap.data ?? const {},
+                  onTapInspection: (inspection) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => UnopenedInspectionDetailsContainer(
+                          inspectionId: inspection.id,
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             );
-          }
+          },
         );
       },
     );

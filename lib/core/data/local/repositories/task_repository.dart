@@ -9,6 +9,10 @@ class TaskRepository {
 
   Stream<List<Task>> watchByInspectionId(String inspectionId) =>
       db.taskDao.watchByInspectionId(inspectionId);
+      
+  Stream<List<Task>> watchByInspectionIds(List<String> inspectionIds) {
+    return db.taskDao.watchByInspectionIds(inspectionIds);
+  }
 
   Stream<Task?> watchById(String taskId) => db.taskDao.watchById(taskId);
 
