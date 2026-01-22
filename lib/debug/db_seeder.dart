@@ -1,3 +1,6 @@
+// This file seeds example data into the technicians, inspections and tasks tables of the local db 
+// Best use for debugging during local testing
+
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 
@@ -41,7 +44,6 @@ class DevSeeder {
           ),
         );
       }
-
 
       final seededInspections = <({
         String aircraftId,
