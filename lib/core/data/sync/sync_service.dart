@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:maintenance_system/core/data/local/repositories/inspection_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maintenance_system/core/data/sync/local_sync_adapter.dart';
 import 'package:maintenance_system/models/sync_models.dart';
@@ -10,6 +11,7 @@ class SyncService {
     required this.clientId,
     required this.local,
     http.Client? httpClient,
+    required this.inspectionRepo, 
     this.timeout = const Duration(seconds: 20),
     this.authStyle = AuthStyle.bearer,
   }) : _http = httpClient ?? http.Client();
@@ -20,6 +22,8 @@ class SyncService {
   final http.Client _http;
   final Duration timeout;
   final AuthStyle authStyle;
+
+  final InspectionRepository inspectionRepo; 
 
   static const _prefsKeyLastSyncAt = 'sync_last_sync_at';
 
@@ -136,6 +140,10 @@ class SyncService {
 
     // 4) Update last_sync_at (use server time as authoritative)
     await _setLastSyncAt(serverTime);
+
+    await inspectionRepo.purgeCompletedSynced(
+      olderThan: const Duration(days: 0), // or 7 if you want retention
+    );
 
     return SyncResult(
       jobId: jobId,

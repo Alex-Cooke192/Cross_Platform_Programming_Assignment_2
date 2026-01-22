@@ -7,7 +7,9 @@ import 'package:drift/drift.dart';
 class Tasks extends Table {
   TextColumn get id => text()(); // Uuid string
 
-  TextColumn get inspectionId => text()(); 
+  TextColumn get inspectionId => text().customConstraint(
+    'NOT NULL REFERENCES inspections(id) ON DELETE CASCADE'
+  )(); 
 
   TextColumn get title => text()();
 

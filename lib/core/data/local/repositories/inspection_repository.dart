@@ -63,6 +63,12 @@ class InspectionRepository {
 
   Future<void> markOpen(String inspectionId) => setOpened(inspectionId);
 
+  /// Purge locally stored inspections that are completed AND synced.
+  /// Returns number of inspections deleted.
+  Future<int> purgeCompletedSynced({Duration? olderThan}) {
+    return db.inspectionDao.purgeCompletedSynced(olderThan: olderThan);
+  }
+
   // ---- Sync (Server -> Local) ----
   // IMPORTANT: repo should not bypass DAO, because DAO sets syncStatus etc.
 
@@ -87,4 +93,6 @@ class InspectionRepository {
       technicianId: technicianId,
     );
   }
+
+
 }

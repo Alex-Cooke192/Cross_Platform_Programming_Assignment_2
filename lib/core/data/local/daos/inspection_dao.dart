@@ -199,4 +199,29 @@ class InspectionDao extends DatabaseAccessor<AppDatabase>
       ),
     );
   }
+
+  Future<int> purgeCompletedSynced({Duration? olderThan}) async {
+    final cutoff = olderThan == null
+        ? null
+        : DateTime.now().toUtc().subtract(olderThan);
+
+    return transaction(() async {
+      final query = select(inspections)
+        ..where((i) => i.completedAt.isNotNull() & i.syncStatus.equals('synced'));
+
+      if (cutoff != null) {
+        query.where((i) => i.completedAt.isSmallerOrEqualValue(cutoff));
+      }
+
+      final eligible = await query.get();
+      if (eligible.isEmpty) return 0;
+
+      // With ON DELETE CASCADE on tasks.inspectionId, this deletes tasks automatically.
+      for (final insp in eligible) {
+        await (delete(inspections)..where((i) => i.id.equals(insp.id))).go();
+      }
+
+      return eligible.length;
+    });
+  }
 }
