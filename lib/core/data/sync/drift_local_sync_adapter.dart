@@ -204,4 +204,11 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
       await db.taskDao.markConflictByIds(taskConflicts);
     });
   }
+
+
+  @override
+  Future<void> purgeCompletedSynced({required Duration olderThan}) async {
+    await db.inspectionDao.purgeCompletedSynced(olderThan: olderThan);
+  }
 }
+

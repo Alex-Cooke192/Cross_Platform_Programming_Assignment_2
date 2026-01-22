@@ -23,4 +23,7 @@ abstract class LocalSyncAdapter {
   required Map<String, dynamic> appliedIds,
 });
 
+  // Delete all completed inspections once successful sync has been confirmed
+  Future<void> purgeCompletedSynced({required Duration olderThan});
+
 }
