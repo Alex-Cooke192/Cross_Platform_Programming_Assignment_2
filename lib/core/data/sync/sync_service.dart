@@ -46,14 +46,20 @@ class SyncService {
   }
 
   Future<SyncResult> syncNow({required String apiKey}) async {
-    final lastSyncAt = await getLastSyncAt();
+
+    final storedLastSyncAt = await getLastSyncAt();
+    final hasLocalData = await local.hasAnyData();
+
+    // If local DB is empty, force an initial sync (ignore storedLastSyncAt)
+    final effectiveLastSyncAt = hasLocalData ? storedLastSyncAt : null;
 
     // 1) Collect local changes
-    final changes = await local.collectLocalChanges(lastSyncAt: lastSyncAt);
+    final changes = await local.collectLocalChanges(lastSyncAt: effectiveLastSyncAt);
 
     final payload = <String, dynamic>{
       'client_id': clientId,
-      if (lastSyncAt != null) 'last_sync_at': lastSyncAt.toUtc().toIso8601String(),
+      if (effectiveLastSyncAt != null)
+        'last_sync_at': effectiveLastSyncAt.toUtc().toIso8601String(),
       'changes': changes,
     };
 

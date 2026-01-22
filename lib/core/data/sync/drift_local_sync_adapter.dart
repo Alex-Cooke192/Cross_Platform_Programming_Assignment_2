@@ -205,10 +205,15 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
     });
   }
 
-
   @override
   Future<void> purgeCompletedSynced({required Duration olderThan}) async {
     await db.inspectionDao.purgeCompletedSynced(olderThan: olderThan);
+  }
+
+  @override
+  Future<bool> hasAnyData() async {
+    final row = await (db.select(db.inspections)..limit(1)).getSingleOrNull();
+    return row != null;
   }
 }
 
