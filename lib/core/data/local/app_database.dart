@@ -30,6 +30,9 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys= ON'); 
+        },
         onCreate: (Migrator m) async {
           // Fresh install: create everything with the latest schema
           await m.createAll();
