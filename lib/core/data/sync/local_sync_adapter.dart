@@ -29,4 +29,5 @@ abstract class LocalSyncAdapter {
   // Checks to see if any data is present in the local db (if not, will have to force epoch as no ts change since last sync)
   Future<bool> hasAnyData(); 
 
+  Future<bool> hasAnyTechnicians();
 }
