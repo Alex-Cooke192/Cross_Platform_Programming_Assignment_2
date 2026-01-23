@@ -173,7 +173,7 @@ class SyncService {
   Future<SyncResult> syncTechnicians({required String apiKey}) async {
   // Cursor (server authoritative time from last pull)
   final storedLastTechSyncAt = await getLastTechSyncAt();
-  final hasTechs = await local.hasAnyTechnicians(); // you'll need this on the interface, or cast locally
+  final hasTechs = await local.hasAnyTechnicians(); 
 
   final effectiveLastTechSyncAt = hasTechs ? storedLastTechSyncAt : null;
 
