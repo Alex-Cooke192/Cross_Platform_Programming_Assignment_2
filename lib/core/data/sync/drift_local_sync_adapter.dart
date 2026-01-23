@@ -108,15 +108,23 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
 
       for (final t in techs) {
         final id = (t['id'] ?? '').toString();
-        final name = (t['name'] ?? '').toString();
-        if (id.isEmpty || name.isEmpty) continue;
+        if (id.isEmpty) continue;
+
+        final username = (t['username'] ?? '').toString().trim();
+        final name = (t['name'] ?? '').toString().trim();
+        final displayName = (t['display_name'] ?? '').toString().trim();
+
+        final effectiveName =
+          username.isNotEmpty ? username : (name.isNotEmpty ? name : displayName);
+
+        if (effectiveName.isEmpty) continue;
 
         final createdAt = _parseDate(t['created_at']) ?? DateTime.now();
         final updatedAt = _parseDate(t['updated_at']) ?? DateTime.now();
 
         await db.technicianDao.upsertFromServer(
           id: id,
-          name: name,
+          name: effectiveName,
           createdAt: createdAt,
           updatedAt: updatedAt,
         );
@@ -213,6 +221,12 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
   @override
   Future<bool> hasAnyData() async {
     final row = await (db.select(db.inspections)..limit(1)).getSingleOrNull();
+    return row != null;
+  }
+
+  @override
+  Future<bool> hasAnyTechnicians() async {
+    final row = await (db.select(db.techniciansCache)..limit(1)).getSingleOrNull();
     return row != null;
   }
 }
