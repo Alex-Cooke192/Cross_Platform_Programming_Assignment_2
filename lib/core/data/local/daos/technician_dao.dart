@@ -28,14 +28,21 @@ class TechnicianDao extends DatabaseAccessor<AppDatabase>
     return (select(techniciansCache)..limit(1)).getSingleOrNull();
   }
 
-  Stream<TechniciansCacheData?> watchByName(String name) {
-    return (select(techniciansCache)..where((t) => t.name.equals(name)))
-        .watchSingleOrNull();
-  }
+  Future<TechniciansCacheData?> getByUsername(String username) {
+  final u = username.trim().toLowerCase();
+  if (u.isEmpty) return Future.value(null);
 
-  Future<TechniciansCacheData?> getByName(String name) {
-    return (select(techniciansCache)..where((t) => t.name.equals(name)))
-        .getSingleOrNull();
+  return customSelect(
+    'SELECT * FROM technicians_cache WHERE lower(name) = ? LIMIT 1',
+    variables: [Variable<String>(u)],
+    readsFrom: {techniciansCache},
+  ).map((row) => techniciansCache.map(row.data)).getSingleOrNull();
+}
+
+
+  Future<bool> hasAnyTechnicians() async {
+    final row = await (db.select(db.techniciansCache)..limit(1)).getSingleOrNull();
+    return row != null;
   }
 
   Future<bool> nameExists(String name) async {
@@ -43,6 +50,9 @@ class TechnicianDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
     return row != null;
   }
+
+  Future<TechniciansCacheData?> getById(String id) =>
+    (select(techniciansCache)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   // Local upsert (user/admin action) => pending + updatedAt
   Future<void> upsertOne({required String id, required String name}) {
