@@ -20,6 +20,12 @@ class TechnicianRepository {
     return row?.toUi();
   }
 
+  Future<TechnicianUi?> getByUsername(String username) async {
+    final row = await db.technicianDao.getByUsername(username);
+    return row?.toUi();
+  }
+
+
   Stream<TechnicianUi?> watchByName(String name) =>
       db.technicianDao.watchByName(name).map((row) => row?.toUi());
 
