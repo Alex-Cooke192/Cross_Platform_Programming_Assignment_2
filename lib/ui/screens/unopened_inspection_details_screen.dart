@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/ui_models.dart';
 import 'package:provider/provider.dart';
+import 'package:maintenance_system/ui/widgets/theme_toggle_button.dart';
 
 import '../../core/data/local/repositories/inspection_repository.dart';
 import '../../core/data/local/repositories/task_repository.dart';
@@ -30,6 +31,9 @@ class UnopenedInspectionDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inspection Details'),
+        actions: const [
+          ThemeToggleButton(),
+        ],
       ),
 
       floatingActionButton: FloatingActionButton.extended(

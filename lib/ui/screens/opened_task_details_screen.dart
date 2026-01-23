@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/data/local/repositories/task_repository.dart';
 import '../../models/ui_models.dart';
+import 'package:maintenance_system/ui/widgets/theme_toggle_button.dart';
 import '../../models/task_mapper.dart';
 
 class CurrentTaskDetailsUi extends StatelessWidget {
@@ -45,12 +46,8 @@ class CurrentTaskDetailsUi extends StatelessWidget {
           onPressed: onBack,
           tooltip: 'Back',
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Save',
-            onPressed: onSave,
-            icon: const Icon(Icons.save),
-          ),
+        actions: const [
+          ThemeToggleButton(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

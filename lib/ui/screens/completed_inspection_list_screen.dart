@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maintenance_system/models/task_mapper.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:maintenance_system/ui/widgets/theme_toggle_button.dart';
 
 import '../../core/data/local/repositories/inspection_repository.dart';
 import '../../core/data/local/repositories/task_repository.dart';
@@ -35,6 +36,9 @@ class CompletedInspectionListScreen extends StatelessWidget {
       appBar: AppBar(
         centerTitle: true,
         title: const Text('Completed Inspections'),
+        actions: const [
+          ThemeToggleButton(),
+        ],
       ),
       body: inspections.isEmpty
           ? const _EmptyState()

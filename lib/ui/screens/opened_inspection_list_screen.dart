@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maintenance_system/ui/widgets/theme_toggle_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/data/local/repositories/inspection_repository.dart';
@@ -31,6 +32,9 @@ class OpenedInspectionListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Current Inspections'),
+        actions: [
+          const ThemeToggleButton(), 
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

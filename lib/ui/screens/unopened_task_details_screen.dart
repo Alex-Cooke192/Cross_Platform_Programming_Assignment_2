@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maintenance_system/models/task_mapper.dart';
 import 'package:provider/provider.dart';
+import 'package:maintenance_system/ui/widgets/theme_toggle_button.dart';
 import '../../models/ui_models.dart';
 
 import '../../core/data/local/repositories/task_repository.dart';
@@ -30,6 +31,9 @@ class UnopenedTaskDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Task Details'),
+        actions: const [
+          ThemeToggleButton(),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

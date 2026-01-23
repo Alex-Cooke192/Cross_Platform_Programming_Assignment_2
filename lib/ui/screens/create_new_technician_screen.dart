@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:maintenance_system/core/data/local/repositories/technician_repository.dart';
+import 'package:maintenance_system/ui/widgets/theme_toggle_button.dart';
 
 class CreateTechnicianScreen extends StatelessWidget {
   final TextEditingController nameController;
@@ -26,6 +27,9 @@ class CreateTechnicianScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Technician Account'),
+        actions: const [
+          ThemeToggleButton(),
+        ],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: isSubmitting ? null : onBackToLogin,

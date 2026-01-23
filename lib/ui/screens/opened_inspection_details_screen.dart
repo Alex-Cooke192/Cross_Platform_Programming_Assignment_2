@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maintenance_system/ui/widgets/theme_toggle_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/data/local/repositories/inspection_repository.dart';
@@ -16,7 +17,6 @@ class CurrentInspectionDetailsScreen extends StatelessWidget {
   /// UI-only callbacks (container decides what they do)
   final void Function(TaskUi task) onOpenTask;
   final VoidCallback onMarkInspectionComplete;
-  final VoidCallback onPauseInspection;
 
   /// Pure UI flags / numbers (container computes these)
   final String statusLabel; // e.g. "IN PROGRESS"
@@ -31,7 +31,6 @@ class CurrentInspectionDetailsScreen extends StatelessWidget {
     required this.tasks,
     required this.onOpenTask,
     required this.onMarkInspectionComplete,
-    required this.onPauseInspection,
     required this.statusLabel,
     required this.completedCount,
     required this.totalCount,
@@ -48,6 +47,10 @@ class CurrentInspectionDetailsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Center(child: _StatusChip(label: statusLabel)),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: ThemeToggleButton(),
           ),
         ],
       ),
@@ -92,7 +95,6 @@ class CurrentInspectionDetailsScreen extends StatelessWidget {
           _ActionsCard(
             canComplete: canComplete,
             onMarkComplete: onMarkInspectionComplete,
-            onPauseInspection: onPauseInspection,
           ),
 
           const SizedBox(height: 24),
@@ -266,12 +268,10 @@ class _TaskTile extends StatelessWidget {
 class _ActionsCard extends StatelessWidget {
   final bool canComplete;
   final VoidCallback onMarkComplete;
-  final VoidCallback onPauseInspection;
 
   const _ActionsCard({
     required this.canComplete,
     required this.onMarkComplete,
-    required this.onPauseInspection,
   });
 
   @override
@@ -288,11 +288,6 @@ class _ActionsCard extends StatelessWidget {
               label: const Text('Mark inspection complete'),
             ),
             const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onPauseInspection,
-              icon: const Icon(Icons.pause_circle_outline),
-              label: const Text('Pause inspection'),
-            ),
             if (!canComplete) ...[
               const SizedBox(height: 10),
               Text(
@@ -446,10 +441,6 @@ class OpenedInspectionDetailsContainer extends StatelessWidget {
                     builder: (_) => OpenedTaskDetailsContainer(taskId: task.id),
                   ),
                 );
-              },
-
-              onPauseInspection: () {
-                Navigator.of(context).pop();
               },
 
               onMarkInspectionComplete: () async {
