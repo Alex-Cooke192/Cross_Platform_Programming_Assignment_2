@@ -43,7 +43,7 @@ class LoginScreen extends StatelessWidget {
 
                   const TextField(
                     decoration: InputDecoration(
-                      labelText: 'Technician ID',
+                      labelText: 'Username',
                       hintText: 'e.g. tech.jane',
                       border: OutlineInputBorder(),
                     ),
@@ -90,12 +90,13 @@ class _LoginContainerState extends State<LoginContainer> {
 
     try {
       final techRepo = context.read<TechnicianRepository>();
-      final tech = await techRepo.getByName(techId);
+      final username = _technicianIdController.text.trim();
+      final tech = await techRepo.getByUsername(username);
 
       if (!mounted) return;
       if (tech == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No technician found for name: $techId"))
+          SnackBar(content: Text("No technician found for name: $username"))
         ); 
         return; 
       }
