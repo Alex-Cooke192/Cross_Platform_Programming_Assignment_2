@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maintenance_system/app_root.dart';
 import 'package:maintenance_system/core/data/local/repositories/task_repository.dart';
+import 'package:maintenance_system/core/data/sync/i_sync_service.dart';
 import 'package:provider/provider.dart';
 import 'package:maintenance_system/core/data/sync/sync_service.dart';
 
@@ -40,7 +41,7 @@ class App extends StatelessWidget {
         Provider(
           create: (_) => TaskRepository(database), 
         ), 
-        Provider<SyncService>.value(value: syncService),
+        Provider<ISyncService>.value(value: syncService),
       ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeController.themeMode,
