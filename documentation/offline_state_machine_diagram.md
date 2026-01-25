@@ -1,42 +1,47 @@
 ```mermaid
 stateDiagram-v2
-  [*] --> Ready
 
-  %% ---------- Offline edit ----------
-  Ready --> Editing : create or edit item
-  Editing --> SavedLocally : save locally
-  SavedLocally --> Clean : no pending changes
-  SavedLocally --> Dirty : local changes exist
+  [*] --> AppStarting
+  AppStarting --> TechCacheReady : refreshTechnicians()\n(upsert technicians_cache)
 
-  %% ---------- Queueing ----------
-  Dirty --> Queued : add to sync queue
+  TechCacheReady --> LoggedOut
+  LoggedOut --> LoggedIn : technicianId exists\nin technicians_cache
 
-  %% ---------- Connectivity ----------
-  Queued --> WaitingForNetwork : offline
-  WaitingForNetwork --> Queued : network available
+  LoggedIn --> Idle : session active
 
-  %% ---------- Sync lifecycle ----------
-  Queued --> Syncing : sync triggered
-  Syncing --> SyncSuccess : changes accepted
-  SyncSuccess --> Clean : local state updated
+  Idle --> Inspection : select inspection
+  Inspection --> Idle : back to list
 
-  Syncing --> SyncFailure : temporary error
-  SyncFailure --> RetryPending : retry later
-  RetryPending --> Syncing : retry
+  %% Logout
+  Idle --> LoggedOut : logout()\n(clear current technician)
 
-  %% ---------- Conflict ----------
-  Syncing --> Conflict : remote and local differ
-  Conflict --> Resolve : manual or automatic resolution
-  Resolve --> Queued : resolved change queued
-  Resolve --> Clean : local change discarded
+  state Inspection {
+    direction LR
 
-  %% ---------- Secure offline storage (conceptual) ----------
-  Ready --> SecureStorage : store data offline
-  SecureStorage --> Protected : data protected
-  SecureStorage --> AtRisk : insufficient protection
-  Protected --> Ready
-  AtRisk --> Ready
+    %% Explicit entry points
+    [*] --> PROG
+    [*] --> SYNC
 
-  %% ---------- Terminator ----------
-  Clean --> [*] : app closed / session ends
+    state "Progress (derived)" as PROG {
+      direction LR
+
+      Outstanding --> InProgress : opened_at = now\ntechnician_id = currentTech\nupdated_at = now
+
+      InProgress --> Completed : completed_at = now\nupdated_at = now
+    }
+
+    state "Sync status (stored)" as SYNC {
+      direction LR
+
+      Synced --> Pending : sync_status = "pending"\n(updated local row)
+
+      Pending --> SyncAttempt : syncNow(apiKey)\ncollect pending rows
+
+      SyncAttempt --> Synced : server accepts\nsync_status = "synced"\nlast_synced_at = now (if tracked)
+
+      SyncAttempt --> Pending : keep sync_status="pending"\n(optionally last_sync_error set)
+    }
+  }
+
+  Idle --> [*] : app closed
   ```
