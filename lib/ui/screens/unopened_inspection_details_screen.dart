@@ -29,14 +29,13 @@ class UnopenedInspectionDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const Key('screen_unopened_details'),
       appBar: AppBar(
         title: const Text('Inspection Details'),
-        actions: const [
-          ThemeToggleButton(),
-        ],
+        actions: const [ThemeToggleButton()],
       ),
-
       floatingActionButton: FloatingActionButton.extended(
+        key: const Key('btn_start_inspection'),
         onPressed: onStartInspection,
         icon: const Icon(Icons.play_arrow),
         label: const Text('Start inspection'),
@@ -44,34 +43,28 @@ class UnopenedInspectionDetailsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _InspectionHeaderCard(inspection: inspection),
-
             const SizedBox(height: 16),
-
             const Text(
               'Tasks',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-
             Expanded(
               child: tasks.isEmpty
-                  ? const Center(
-                      child: Text('No tasks found for this inspection.'),
-                    )
+                  ? const Center(child: Text('No tasks found for this inspection.'))
                   : ListView.separated(
                       itemCount: tasks.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: 8),
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final task = tasks[index];
                         return _TaskTile(
+                          key: Key('tile_unopened_task_$index'),
                           task: task,
                           onTap: () => onOpenTask(task),
                         );
@@ -84,8 +77,6 @@ class UnopenedInspectionDetailsScreen extends StatelessWidget {
     );
   }
 }
-
-/* -------------------- PRESENTATIONAL WIDGETS -------------------- */
 
 class _InspectionHeaderCard extends StatelessWidget {
   final InspectionUi inspection;
@@ -107,10 +98,7 @@ class _InspectionHeaderCard extends StatelessWidget {
           children: [
             Text(
               inspection.aircraftId,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(openedText),
@@ -128,6 +116,7 @@ class _TaskTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _TaskTile({
+    super.key,
     required this.task,
     required this.onTap,
   });
@@ -135,23 +124,16 @@ class _TaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subtitleParts = <String>[
-      if (task.result != null && task.result!.trim().isNotEmpty)
-        'Result: ${task.result}',
-      if (task.notes != null && task.notes!.trim().isNotEmpty)
-        'Notes added',
+      if (task.result != null && task.result!.trim().isNotEmpty) 'Result: ${task.result}',
+      if (task.notes != null && task.notes!.trim().isNotEmpty) 'Notes added',
     ];
 
     return ListTile(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       tileColor: Theme.of(context).colorScheme.surface,
-      leading: Icon(
-        task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-      ),
+      leading: Icon(task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked),
       title: Text(task.title),
-      subtitle:
-          subtitleParts.isEmpty ? null : Text(subtitleParts.join(' • ')),
+      subtitle: subtitleParts.isEmpty ? null : Text(subtitleParts.join(' • ')),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
     );
@@ -171,11 +153,9 @@ class UnopenedInspectionDetailsContainer extends StatelessWidget {
     final inspectionRepo = context.read<InspectionRepository>();
     final taskRepo = context.read<TaskRepository>();
 
-    // Stream<InspectionUi?>
     final inspectionUi$ =
         inspectionRepo.watchById(inspectionId).map((row) => row?.toUi());
 
-    // Stream<List<TaskUi>>
     final tasksUi$ =
         taskRepo.watchByInspectionId(inspectionId).map((rows) => rows.toUiList());
 
@@ -185,7 +165,6 @@ class UnopenedInspectionDetailsContainer extends StatelessWidget {
         final inspection = inspSnap.data;
 
         if (inspection == null) {
-          // Simple placeholder while loading / if not found
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -200,10 +179,8 @@ class UnopenedInspectionDetailsContainer extends StatelessWidget {
             return UnopenedInspectionDetailsScreen(
               inspection: inspection,
               tasks: tasks,
-
               onStartInspection: () async {
-                final techId =
-                    context.read<CurrentTechnician>().technicianId;
+                final techId = context.read<CurrentTechnician>().technicianId;
 
                 if (techId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -212,20 +189,14 @@ class UnopenedInspectionDetailsContainer extends StatelessWidget {
                   return;
                 }
 
-                await inspectionRepo.setOpened(
-                  inspectionId
-                );
+                await inspectionRepo.setOpened(inspectionId);
 
-                // Optional: go back after starting
                 if (context.mounted) Navigator.of(context).pop();
               },
-
               onOpenTask: (task) {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => UnopenedTaskDetailsContainer(
-                      taskId: task.id,
-                    ),
+                    builder: (_) => UnopenedTaskDetailsContainer(taskId: task.id),
                   ),
                 );
               },

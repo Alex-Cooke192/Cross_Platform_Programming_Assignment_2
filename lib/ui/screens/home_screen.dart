@@ -9,7 +9,7 @@ import 'unopened_inspection_list_screen.dart';
 import 'opened_inspection_list_screen.dart';
 import 'completed_inspection_list_screen.dart';
 import '../dialogs/show_attempt_sync_dialog.dart';
-import 'package:maintenance_system/core/data/sync/sync_service.dart';
+import 'package:maintenance_system/core/data/sync/i_sync_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,11 +18,12 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final inspectionRepo = context.read<InspectionRepository>();
 
-    final unopenedCount$ = inspectionRepo.watchUnopenedCount(); 
+    final unopenedCount$ = inspectionRepo.watchUnopenedCount();
     final openCount$ = inspectionRepo.watchOpenCount();
     final completedCount$ = inspectionRepo.watchCompletedCount();
 
     return Scaffold(
+      key: const Key('screen_home'),
       appBar: AppBar(
         centerTitle: true,
         title: const Text('RampCheck'),
@@ -33,30 +34,41 @@ class HomeScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
+            key: const Key('btn_sync'),
             icon: const Icon(Icons.sync),
             onPressed: () async {
-              final apiKey = await showAttemptSyncDialog(context);
+              final apiKey = await showAttemptSyncDialog(context,);
               if (apiKey == null) return;
 
               try {
-                await context.read<SyncService>().syncNow(apiKey: apiKey);
+                await context.read<ISyncService>().syncNow(apiKey: apiKey);
 
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Sync successful')),
+                  SnackBar(
+                    content: const Text(
+                      'Sync successful',
+                      key: Key('snackbar_sync_success'),
+                    ),
+                  ),
                 );
               } catch (e) {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Sync failed: $e')),
+                  SnackBar(
+                    content: Text(
+                      'Sync failed: $e',
+                      key: const Key('snackbar_sync_failed'),
+                    ),
+                  ),
                 );
               }
             },
-          ), 
+          ),
           const SizedBox(width: 12),
         ],
       ),
-      floatingActionButton: LogoutButton(),
+      floatingActionButton: const LogoutButton(),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -74,6 +86,7 @@ class HomeScreen extends StatelessWidget {
               builder: (context, snap) {
                 final value = snap.data ?? 0;
                 return _DashboardCard(
+                  key: const Key('nav_unopened'),
                   title: 'Assigned Inspections: Ready to begin',
                   value: '$value',
                   icon: Icons.assignment,
@@ -81,14 +94,14 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const UnopenedInspectionListContainer(), 
+                        builder: (_) => const UnopenedInspectionListContainer(),
                       ),
                     );
                   },
                 );
               },
             ),
-        
+
             const SizedBox(height: 12),
 
             StreamBuilder<int>(
@@ -97,6 +110,7 @@ class HomeScreen extends StatelessWidget {
               builder: (context, snap) {
                 final value = snap.data ?? 0;
                 return _DashboardCard(
+                  key: const Key('nav_opened'),
                   title: 'Assigned Inspections: In Progress',
                   value: '$value',
                   icon: Icons.build,
@@ -120,6 +134,7 @@ class HomeScreen extends StatelessWidget {
               builder: (context, snap) {
                 final value = snap.data ?? 0;
                 return _DashboardCard(
+                  key: const Key('nav_completed'),
                   title: 'Assigned Inspections: Completed • Awaiting Sync',
                   value: '$value',
                   icon: Icons.cloud_upload,
@@ -148,6 +163,7 @@ class _DashboardCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _DashboardCard({
+    super.key,
     required this.title,
     required this.value,
     required this.icon,

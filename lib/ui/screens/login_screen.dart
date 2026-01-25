@@ -14,6 +14,7 @@ class LoginScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
+      key: const Key('screen_login'),
       appBar: AppBar(
         title: const Text('RampCheck Login'),
         actions: const [ThemeToggleButton()],
@@ -42,6 +43,7 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   const TextField(
+                    key: Key('field_technician_id'),
                     decoration: InputDecoration(
                       labelText: 'Username',
                       hintText: 'e.g. tech.jane',
@@ -52,6 +54,7 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   const FilledButton(
+                    key: Key('btn_sign_in'),
                     onPressed: null,
                     child: Text('Sign in'),
                   ),
@@ -96,12 +99,14 @@ class _LoginContainerState extends State<LoginContainer> {
       if (!mounted) return;
       if (tech == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No technician found for name: $username"))
-        ); 
-        return; 
+          SnackBar(
+            content: Text("No technician found for name: $username"),
+          ),
+        );
+        return;
       }
 
-      context.read<CurrentTechnician>().setTechnician(tech.id); 
+      context.read<CurrentTechnician>().setTechnician(tech.id);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -112,6 +117,7 @@ class _LoginContainerState extends State<LoginContainer> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      key: const Key('screen_login'),
       appBar: AppBar(
         title: const Text('RampCheck Login'),
         actions: const [ThemeToggleButton()],
@@ -140,6 +146,7 @@ class _LoginContainerState extends State<LoginContainer> {
                   const SizedBox(height: 24),
 
                   TextField(
+                    key: const Key('field_technician_id'),
                     controller: _technicianIdController,
                     decoration: const InputDecoration(
                       labelText: 'Technician ID',
@@ -151,6 +158,7 @@ class _LoginContainerState extends State<LoginContainer> {
                   const SizedBox(height: 16),
 
                   FilledButton(
+                    key: const Key('btn_sign_in'),
                     onPressed: _isLoading ? null : _handleSignIn,
                     child: _isLoading
                         ? const SizedBox(
@@ -163,6 +171,7 @@ class _LoginContainerState extends State<LoginContainer> {
                   const SizedBox(height: 8),
 
                   TextButton(
+                    key: const Key('btn_create_technician'),
                     onPressed: _isLoading
                         ? null
                         : () {

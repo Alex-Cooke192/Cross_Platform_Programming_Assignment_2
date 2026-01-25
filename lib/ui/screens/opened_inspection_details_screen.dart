@@ -41,12 +41,18 @@ class CurrentInspectionDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const Key('screen_opened_details'),
       appBar: AppBar(
         title: const Text('Current Inspection'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: Center(child: _StatusChip(label: statusLabel)),
+            child: Center(
+              child: _StatusChip(
+                key: const Key('chip_inspection_status'),
+                label: statusLabel,
+              ),
+            ),
           ),
           const Padding(
             padding: EdgeInsets.only(right: 8),
@@ -55,9 +61,11 @@ class CurrentInspectionDetailsScreen extends StatelessWidget {
         ],
       ),
       body: ListView(
+        key: const Key('list_opened_details'),
         padding: const EdgeInsets.all(16),
         children: [
           _HeaderCard(
+            key: const Key('card_inspection_header'),
             inspection: inspection,
             completedCount: completedCount,
             totalCount: totalCount,
@@ -66,9 +74,11 @@ class CurrentInspectionDetailsScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           _SectionTitle(
+            key: const Key('section_tasks_title'),
             title: 'Tasks',
             trailing: Text(
               totalCount == 0 ? '—' : '$completedCount / $totalCount',
+              key: const Key('text_task_progress'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -76,23 +86,31 @@ class CurrentInspectionDetailsScreen extends StatelessWidget {
 
           if (tasks.isEmpty)
             const _EmptyStateCard(
+              key: Key('empty_tasks'),
               title: 'No tasks found',
               message: 'This inspection has no tasks to complete.',
             )
           else
-            ...tasks.map(
-              (t) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _TaskTile(
-                  task: t,
-                  onTap: () => onOpenTask(t),
-                ),
-              ),
+            ...tasks.asMap().entries.map(
+              (entry) {
+                final index = entry.key;
+                final t = entry.value;
+                return Padding(
+                  key: Key('pad_opened_task_$index'),
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _TaskTile(
+                    key: Key('tile_opened_task_$index'),
+                    task: t,
+                    onTap: () => onOpenTask(t),
+                  ),
+                );
+              },
             ),
 
           const SizedBox(height: 20),
 
           _ActionsCard(
+            key: const Key('card_actions'),
             canComplete: canComplete,
             onMarkComplete: onMarkInspectionComplete,
           ),
@@ -113,6 +131,7 @@ class _HeaderCard extends StatelessWidget {
   final double progress;
 
   const _HeaderCard({
+    super.key,
     required this.inspection,
     required this.completedCount,
     required this.totalCount,
@@ -134,32 +153,48 @@ class _HeaderCard extends StatelessWidget {
           children: [
             Text(
               inspection.id,
+              key: const Key('text_inspection_id'),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             if (subtitleParts.isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text(subtitleParts.join(' • ')),
+              Text(
+                subtitleParts.join(' • '),
+                key: const Key('text_inspection_subtitle'),
+              ),
             ],
             const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  totalCount == 0 ? 'Progress —' : 'Progress $completedCount / $totalCount',
+                  totalCount == 0
+                      ? 'Progress —'
+                      : 'Progress $completedCount / $totalCount',
+                  key: const Key('text_progress_label'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                Text('${(progress * 100).round()}%'),
+                Text(
+                  '${(progress * 100).round()}%',
+                  key: const Key('text_progress_percent'),
+                ),
               ],
             ),
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(value: progress),
+              child: LinearProgressIndicator(
+                key: const Key('bar_progress'),
+                value: progress,
+              ),
             ),
             const SizedBox(height: 14),
-            _InfoGrid(inspection: inspection),
+            _InfoGrid(
+              key: const Key('grid_info'),
+              inspection: inspection,
+            ),
           ],
         ),
       ),
@@ -178,7 +213,7 @@ class _HeaderCard extends StatelessWidget {
 class _InfoGrid extends StatelessWidget {
   final InspectionUi inspection;
 
-  const _InfoGrid({required this.inspection});
+  const _InfoGrid({super.key, required this.inspection});
 
   @override
   Widget build(BuildContext context) {
@@ -191,11 +226,15 @@ class _InfoGrid extends StatelessWidget {
     if (rows.isEmpty) return const SizedBox.shrink();
 
     return Column(
+      key: const Key('col_info_rows'),
       children: [
         const Divider(height: 1),
         const SizedBox(height: 12),
-        ...rows.map(
-          (r) => Padding(
+        ...rows.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final r = entry.value;
+          return Padding(
+            key: Key('row_info_$idx'),
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
@@ -203,16 +242,22 @@ class _InfoGrid extends StatelessWidget {
                   width: 100,
                   child: Text(
                     r.label,
+                    key: Key('label_info_$idx'),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
                 ),
-                Expanded(child: Text(r.value)),
+                Expanded(
+                  child: Text(
+                    r.value,
+                    key: Key('value_info_$idx'),
+                  ),
+                ),
               ],
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
@@ -229,7 +274,6 @@ class _InfoGrid extends StatelessWidget {
 class _InfoRow {
   final String label;
   final String value;
-
   _InfoRow({required this.label, required this.value});
 }
 
@@ -238,6 +282,7 @@ class _TaskTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _TaskTile({
+    super.key,
     required this.task,
     required this.onTap,
   });
@@ -250,13 +295,17 @@ class _TaskTile extends StatelessWidget {
     return Card(
       child: ListTile(
         onTap: onTap,
-        leading: Icon(task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked),
-        title: Text(task.title),
+        leading: Icon(
+          task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+          key: Key('icon_task_complete_${task.id}'),
+        ),
+        title: Text(task.title, key: Key('text_task_title_${task.id}')),
         subtitle: Column(
+          key: Key('col_task_sub_${task.id}'),
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Result: $result'),
-            if (hasNotes) const Text('Notes added'),
+            Text('Result: $result', key: Key('text_task_result_${task.id}')),
+            if (hasNotes) Text('Notes added', key: Key('text_task_notes_${task.id}')),
           ],
         ),
         trailing: const Icon(Icons.chevron_right),
@@ -270,6 +319,7 @@ class _ActionsCard extends StatelessWidget {
   final VoidCallback onMarkComplete;
 
   const _ActionsCard({
+    super.key,
     required this.canComplete,
     required this.onMarkComplete,
   });
@@ -280,9 +330,11 @@ class _ActionsCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          key: const Key('col_actions'),
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ElevatedButton.icon(
+              key: const Key('btn_mark_inspection_complete'),
               onPressed: canComplete ? onMarkComplete : null,
               icon: const Icon(Icons.done_all),
               label: const Text('Mark inspection complete'),
@@ -292,6 +344,7 @@ class _ActionsCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 'Complete all tasks to mark this inspection as complete.',
+                key: const Key('text_cannot_complete_hint'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -305,7 +358,7 @@ class _ActionsCard extends StatelessWidget {
 class _StatusChip extends StatelessWidget {
   final String label;
 
-  const _StatusChip({required this.label});
+  const _StatusChip({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -317,6 +370,7 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         label,
+        key: const Key('text_status_label'),
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -330,6 +384,7 @@ class _SectionTitle extends StatelessWidget {
   final Widget? trailing;
 
   const _SectionTitle({
+    super.key,
     required this.title,
     this.trailing,
   });
@@ -337,9 +392,11 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      key: const Key('row_section_title'),
       children: [
         Text(
           title,
+          key: const Key('text_section_title'),
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const Spacer(),
@@ -354,6 +411,7 @@ class _EmptyStateCard extends StatelessWidget {
   final String message;
 
   const _EmptyStateCard({
+    super.key,
     required this.title,
     required this.message,
   });
@@ -364,11 +422,12 @@ class _EmptyStateCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          key: const Key('col_empty_tasks'),
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(title, key: const Key('text_empty_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            Text(message),
+            Text(message, key: const Key('text_empty_message')),
           ],
         ),
       ),
@@ -389,7 +448,6 @@ class OpenedInspectionDetailsContainer extends StatelessWidget {
     final inspectionRepo = context.read<InspectionRepository>();
     final taskRepo = context.read<TaskRepository>();
 
-    // Domain -> UI
     final inspectionUi$ =
         inspectionRepo.watchById(inspectionId).map((row) => row?.toUi());
 
@@ -404,12 +462,14 @@ class OpenedInspectionDetailsContainer extends StatelessWidget {
         if (inspSnap.connectionState == ConnectionState.waiting &&
             inspection == null) {
           return const Scaffold(
+            key: Key('screen_opened_details_loading'),
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (inspection == null) {
           return const Scaffold(
+            key: Key('screen_opened_details_not_found'),
             body: Center(child: Text('Inspection not found')),
           );
         }
@@ -420,7 +480,6 @@ class OpenedInspectionDetailsContainer extends StatelessWidget {
           builder: (context, tasksSnap) {
             final tasks = tasksSnap.data ?? const <TaskUi>[];
 
-            // ---- UI stats (container responsibility) ----
             final completedCount = tasks.where((t) => t.isCompleted).length;
             final totalCount = tasks.length;
             final progress = totalCount == 0 ? 0.0 : completedCount / totalCount;
@@ -448,7 +507,12 @@ class OpenedInspectionDetailsContainer extends StatelessWidget {
 
                 if (techId == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('No technician selected.')),
+                    const SnackBar(
+                      content: Text(
+                        'No technician selected.',
+                        key: Key('snackbar_no_technician'),
+                      ),
+                    ),
                   );
                   return;
                 }

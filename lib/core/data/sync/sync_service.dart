@@ -3,8 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maintenance_system/core/data/sync/local_sync_adapter.dart';
 import 'package:maintenance_system/models/sync_models.dart';
+import 'i_sync_service.dart';
 
-class SyncService {
+class SyncService implements ISyncService {
   SyncService({
     required this.baseUrl,
     required this.clientId,

@@ -1,16 +1,28 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:flutter/material.dart';
 
-import 'package:maintenance_system/main.dart' as app;
+import 'support/fake_local_db.dart';
+import 'test_app.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('app smoke test', (tester) async {
-    app.main();
-    await tester.pumpAndSettle(const Duration(seconds: 5));
+  late FakeLocalDbHarness harness;
 
-    expect(find.byType(MaterialApp), findsOneWidget);
+  setUpAll(() async {
+    harness = await FakeLocalDbHarness.create(inMemory: true);
+    await harness.seedAssumedData();
+  });
+
+  tearDownAll(() async {
+    await harness.dispose();
+  });
+
+  testWidgets('Smoke: app boots to login', (tester) async {
+    await tester.pumpWidget(createTestApp(db: harness.db));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('screen_login')), findsOneWidget);
   });
 }

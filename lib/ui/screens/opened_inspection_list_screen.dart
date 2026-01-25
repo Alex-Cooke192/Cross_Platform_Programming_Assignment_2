@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 
 import '../../core/data/local/repositories/inspection_repository.dart';
 import '../../models/ui_models.dart';
-import '../../models/inspection_mapper.dart'; 
+import '../../models/inspection_mapper.dart';
 import 'unopened_inspection_list_screen.dart';
-import 'opened_inspection_details_screen.dart'; 
+import 'opened_inspection_details_screen.dart';
 
 class OpenedInspectionListScreen extends StatelessWidget {
   final List<InspectionUi> inspections;
@@ -30,11 +30,10 @@ class OpenedInspectionListScreen extends StatelessWidget {
     final remaining = (maxInProgress - count).clamp(0, maxInProgress);
 
     return Scaffold(
+      key: const Key('screen_opened_list'),
       appBar: AppBar(
         title: const Text('Current Inspections'),
-        actions: [
-          const ThemeToggleButton(), 
-        ],
+        actions: const [ThemeToggleButton()],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -53,11 +52,11 @@ class OpenedInspectionListScreen extends StatelessWidget {
                   ? const _EmptyState()
                   : ListView.separated(
                       itemCount: count,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: 10),
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final inspection = inspections[index];
                         return _InspectionCard(
+                          key: Key('tile_opened_inspection_$index'),
                           inspection: inspection,
                           onTap: () => onOpenInspection(inspection),
                         );
@@ -69,6 +68,7 @@ class OpenedInspectionListScreen extends StatelessWidget {
       ),
       floatingActionButton: canStart
           ? FloatingActionButton(
+              key: const Key('btn_start_new_inspection'),
               onPressed: onStartNewInspection,
               child: const Icon(Icons.add),
             )
@@ -76,8 +76,6 @@ class OpenedInspectionListScreen extends StatelessWidget {
     );
   }
 }
-
-/* -------------------- PRESENTATIONAL WIDGETS -------------------- */
 
 class _StatusHeader extends StatelessWidget {
   final int count;
@@ -104,9 +102,7 @@ class _StatusHeader extends StatelessWidget {
             Icon(
               Icons.assignment_turned_in_outlined,
               size: 28,
-              color: canStart
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.error,
+              color: canStart ? theme.colorScheme.primary : theme.colorScheme.error,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -115,8 +111,7 @@ class _StatusHeader extends StatelessWidget {
                 children: [
                   Text(
                     '$count / $maxInProgress in progress',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -140,14 +135,14 @@ class _InspectionCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _InspectionCard({
+    super.key,
     required this.inspection,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final started =
-        inspection.openedAt == null ? '—' : _formatDateTime(inspection.openedAt!);
+    final started = inspection.openedAt == null ? '—' : _formatDateTime(inspection.openedAt!);
 
     return Card(
       child: ListTile(
@@ -172,8 +167,7 @@ class _InspectionCard extends StatelessWidget {
 
   static String _formatDateTime(DateTime dt) {
     String two(int v) => v.toString().padLeft(2, '0');
-    return '${dt.year}-${two(dt.month)}-${two(dt.day)} '
-        '${two(dt.hour)}:${two(dt.minute)}';
+    return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}';
   }
 }
 
@@ -190,13 +184,11 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined,
-                size: 56, color: theme.colorScheme.outline),
+            Icon(Icons.inbox_outlined, size: 56, color: theme.colorScheme.outline),
             const SizedBox(height: 12),
             Text(
               'No inspections in progress',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
@@ -220,8 +212,7 @@ class OpenedInspectionListContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = context.read<InspectionRepository>();
 
-    final inProgress$ =
-        repo.watchOpen().map((rows) => rows.toUiList());
+    final inProgress$ = repo.watchOpen().map((rows) => rows.toUiList());
 
     return StreamBuilder<List<InspectionUi>>(
       stream: inProgress$,
@@ -255,3 +246,4 @@ class OpenedInspectionListContainer extends StatelessWidget {
     );
   }
 }
+
