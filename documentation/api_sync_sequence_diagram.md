@@ -5,90 +5,106 @@ sequenceDiagram
   actor Tech as Technician
   participant UI as Flutter UI
   participant Repos as Repositories
-  participant Sync as SyncService
-  participant API as Remote Sync API
   participant DAOs as DAOs
   participant LDB as Local DB (Drift / SQLite)
+  participant Sync as Sync Engine
+  participant API as Remote Sync API
+  participant RDB as Remote DB
 
-  %% App startup: refresh technicians cache (new API sync)
-  UI->>Repos: initApp()
-  Repos->>Sync: refreshTechnicians(apiKey)
+  Tech->>UI: Tap "Sync" logo
+  UI-->>Tech: Prompt for API Key
+  Tech->>UI: Enter API Key + Tap "Confirm Sync"
 
-  Sync->>API: GET /technicians (Authorization: API key)
-  alt Online and authorised
-    API-->>Sync: technicians[]
-    Sync->>DAOs: upsertTechnicians(technicians[])
-    DAOs->>LDB: INSERT INTO technicians_cache...\nON CONFLICT(id) DO UPDATE...
-    LDB-->>DAOs: OK
-    DAOs-->>Sync: OK
-    Sync-->>Repos: Technicians cache refreshed
-    Repos-->>UI: Startup complete
-  else Offline or auth fails
-    Sync-->>Repos: Use existing technicians_cache
-    Repos-->>UI: Startup complete (cached)
+  alt API Key missing
+    UI-->>Tech: Error: API Key required
+  else API Key provided
+    UI->>Sync: syncNow(apiKey)
+
+    Sync->>DAOs: getLastSyncAt()
+    DAOs->>LDB: SELECT last_sync_at FROM sync_state LIMIT 1
+    LDB-->>DAOs: lastSyncAt (nullable)
+    DAOs-->>Sync: lastSyncAt
+
+    alt lastSyncAt is null (first sync / force bootstrap)
+      Sync->>API: GET /bootstrap\nHeaders: X-API-Key / Bearer apiKey
+      API->>API: Validate API Key
+
+      alt API Key invalid
+        API-->>Sync: 401 Unauthorized
+        Sync-->>UI: Sync failed (Unauthorized)
+        UI-->>Tech: Invalid API Key
+      else API Key valid
+        API->>RDB: SELECT technicians (+ optionally inspections metadata)
+        RDB-->>API: bootstrapSet
+        API-->>Sync: 200 OK (bootstrapSet, serverTime)
+
+        Sync->>DAOs: applyBootstrap(bootstrapSet, serverTime)
+        DAOs->>LDB: UPSERT technicians_cache
+        DAOs->>LDB: UPDATE sync_state\nSET last_sync_at=serverTime
+        LDB-->>DAOs: OK
+        DAOs-->>Sync: OK
+      end
+    end
+
+    Sync->>DAOs: fetchPendingChanges(lastSyncAt)
+    DAOs->>LDB: SELECT * FROM tables\nWHERE sync_status="pending"
+    LDB-->>DAOs: pending rows
+    DAOs-->>Sync: changeSet
+
+    alt changeSet is empty
+      Sync-->>UI: Nothing to sync
+      UI-->>Tech: Up to date
+    else changeSet has changes
+      Sync->>API: POST /sync (changeSet)\nHeaders: X-API-Key / Bearer apiKey
+
+      API->>API: Validate API Key
+      alt API Key invalid
+        API-->>Sync: 401 Unauthorized
+        Sync-->>UI: Sync failed (Unauthorized)
+        UI-->>Tech: Invalid API Key
+      else API Key valid
+        API->>RDB: BEGIN TRANSACTION
+        API->>RDB: Validate changeSet\n(ids, FKs, timestamps)
+
+        alt changeSet validation fails
+          API->>RDB: ROLLBACK
+          API-->>Sync: 409 Conflict / 400 Error
+          Sync-->>UI: Sync failed (conflict)
+          UI-->>Tech: Conflict message
+        else changeSet validation ok
+          API->>RDB: UPSERT inspections
+          API->>RDB: UPSERT tasks
+          API->>RDB: Write sync metadata (serverTime)
+          API->>RDB: COMMIT
+          RDB-->>API: OK
+
+          API-->>Sync: 200 OK (appliedIds, serverTime)
+
+          Sync->>DAOs: markSynced(appliedIds, serverTime)
+          DAOs->>LDB: UPDATE rows\nSET sync_status="synced", synced_at=serverTime
+          DAOs->>LDB: UPDATE sync_state\nSET last_sync_at=serverTime
+          LDB-->>DAOs: OK
+          DAOs-->>Sync: OK
+
+          opt Pull remote delta
+            Sync->>API: GET /changes?since=lastSyncAt\nHeaders: X-API-Key / Bearer apiKey
+            API->>RDB: SELECT updated rows since lastSyncAt
+            RDB-->>API: deltaSet
+            API-->>Sync: 200 OK (deltaSet, serverTime)
+
+            Sync->>DAOs: applyRemoteDelta(deltaSet, serverTime)
+            DAOs->>LDB: UPSERT delta rows
+            DAOs->>LDB: UPDATE sync_state\nSET last_sync_at=serverTime
+            LDB-->>DAOs: OK
+          end
+
+          Sync-->>UI: Sync successful
+          UI-->>Tech: Confirmation message
+        end
+      end
+    end
   end
 
-  %% Login (uses local technicians_cache)
-  Tech->>UI: Enter technician ID
-  UI->>Repos: login(technicianId)
-  Repos->>DAOs: getTechnician(technicianId)
-  DAOs->>LDB: SELECT * FROM technicians_cache\nWHERE id = ?
-  alt Technician found
-    LDB-->>DAOs: technician row
-    DAOs-->>Repos: Technician model
-    Repos-->>UI: Login successful
-  else Not found
-    LDB-->>DAOs: 0 rows
-    DAOs-->>Repos: null
-    Repos-->>UI: Login failed (unknown technician)
-  end
 
-  %% Start inspection
-  Tech->>UI: Tap "Start inspection" (inspectionId)
-  UI->>Repos: startInspection(inspectionId, technicianId)
-  Repos->>DAOs: markInspectionOpened(inspectionId, technicianId)
-  DAOs->>LDB: UPDATE inspections\nSET opened_at=now,\ntechnician_id=?,\nupdated_at=now,\nsync_status="pending"\nWHERE id=?
-  LDB-->>DAOs: OK
-  DAOs-->>Repos: OK
-  Repos-->>UI: Inspection started
-
-  %% Complete tasks
-  loop For each task
-    %% Add task result
-    Tech->>UI: Enter task result
-    UI->>Repos: addTaskResult(taskId, result)
-    Repos->>DAOs: updateTaskResult(taskId, result)
-    DAOs->>LDB: UPDATE tasks\nSET result=?,\nupdated_at=now,\nsync_status="pending"\nWHERE id=?
-    LDB-->>DAOs: OK
-    DAOs-->>Repos: OK
-    Repos-->>UI: Result saved
-
-    %% Add task notes
-    Tech->>UI: Add notes
-    UI->>Repos: addTaskNotes(taskId, notes)
-    Repos->>DAOs: updateTaskNotes(taskId, notes)
-    DAOs->>LDB: UPDATE tasks\nSET notes=?,\nupdated_at=now,\nsync_status="pending"\nWHERE id=?
-    LDB-->>DAOs: OK
-    DAOs-->>Repos: OK
-    Repos-->>UI: Notes saved
-
-    %% Mark task complete
-    Tech->>UI: Mark task complete
-    UI->>Repos: completeTask(taskId)
-    Repos->>DAOs: markTaskCompleted(taskId)
-    DAOs->>LDB: UPDATE tasks\nSET is_completed=true,\ncompleted_at=now,\nupdated_at=now,\nsync_status="pending"\nWHERE id=?
-    LDB-->>DAOs: OK
-    DAOs-->>Repos: OK
-    Repos-->>UI: Task completed
-  end
-
-  %% Finish inspection
-  Tech->>UI: Tap "Mark inspection completed"
-  UI->>Repos: completeInspection(inspectionId)
-  Repos->>DAOs: markInspectionCompleted(inspectionId)
-  DAOs->>LDB: UPDATE inspections\nSET is_completed=true,\ncompleted_at=now,\nupdated_at=now,\nsync_status="pending"\nWHERE id=?
-  LDB-->>DAOs: OK
-  DAOs-->>Repos: OK
-  Repos-->>UI: Inspection completed
 
   ```
