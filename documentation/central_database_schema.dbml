@@ -1,52 +1,58 @@
-// Central DB schema (server/system-of-record)
-// UUIDs stored as TEXT, timestamps as ISO-8601 TEXT.
+// Central / Remote DB Schema
+// Authoritative source of truth
+// UUID primary keys stored as TEXT
+// Timestamps stored as ISO-8601 TEXT
 
-Table technicians {
-  id text [pk, note: "UUID (matches client)"]
+Table technicians_cache {
+  id text [pk]
   username text [not null, unique]
   display_name text
-  role text [not null, default: "technician", note: "admin|technician (extend as needed)"]
+  role text [not null, default: 'technician']
 
-  created_at text [not null, default: "CURRENT_TIMESTAMP"]
-  updated_at text [not null, default: "CURRENT_TIMESTAMP"]
+  created_at text [not null]
+  updated_at text [not null]
+
+  sync_status text [not null, default: 'synced', note: "CHECK IN ('synced','pending','conflict')"]
 }
 
 Table inspections {
-  id text [pk, note: "UUID"]
-  aircraft_id text [not null, note: "e.g. G-ABCD"]
-  status text [not null, note: "outstanding|in_progress|completed"]
-  opened_at text
-  completed_at text
+  id text [pk]
+  aircraft_id text [not null]
 
-  technician_id text [note: "Owner/creator (optional)"]
+  opened_at text               // nullable
+  completed_at text            // nullable
 
-  created_at text [not null, default: "CURRENT_TIMESTAMP"]
-  updated_at text [not null, default: "CURRENT_TIMESTAMP"]
+  technician_id text           // nullable FK -> technicians_cache.id
 
-  indexes {
-    status [name: "idx_inspections_status"]
-  }
+  created_at text [not null]
+  updated_at text [not null]
+
+  sync_status text [not null, default: 'synced', note: "CHECK IN ('synced','pending','conflict')"]
 }
 
 Table tasks {
-  id text [pk, note: "UUID"]
-  inspection_id text [not null]
+  id text [pk]
+  inspection_id text [not null] // FK -> inspections.id (ON DELETE CASCADE)
+
   title text [not null]
   description text
-  is_complete int [not null, default: 0, note: "0/1"]
+
+  is_complete int [not null, default: 0, note: "CHECK IN (0,1)"]
   result text
   notes text
   completed_at text
 
-  created_at text [not null, default: "CURRENT_TIMESTAMP"]
-  updated_at text [not null, default: "CURRENT_TIMESTAMP"]
+  created_at text [not null]
+  updated_at text [not null]
 
-  indexes {
-    inspection_id [name: "idx_tasks_inspection_id"]
-    is_complete [name: "idx_tasks_complete"]
+  sync_status text [not null, default: 'synced', note: "CHECK IN ('synced','pending','conflict')"]
+
+  Indexes {
+    (inspection_id) [name: "idx_tasks_inspection_id"]
+    (is_complete) [name: "idx_tasks_complete"]
   }
 }
 
-// Relationships
-Ref: inspections.technician_id > technicians.id [delete: set null]
+Ref: inspections.technician_id > technicians_cache.id [delete: set null]
 Ref: tasks.inspection_id > inspections.id [delete: cascade]
+
