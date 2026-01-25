@@ -24,13 +24,15 @@ class _AppRootState extends State<AppRoot> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final sync = context.read<ISyncService>();
-
       // Always pull technicians on startup
       const apiKey = 'api_warehouse_student_key_1234567890abcdef';
+
       try {
-        await sync.syncTechnicians(apiKey: apiKey);
-      } catch (_) {
-        // offline/unauthorized is fine on startup
+        final result = await sync.syncTechnicians(apiKey: apiKey);
+        debugPrint('BOOT: technicians sync OK. serverTime=${result.serverTime}');
+      } catch (e, st) {
+        debugPrint('BOOT: technicians sync FAILED: $e');
+        debugPrint('$st');
       }
 
     });
