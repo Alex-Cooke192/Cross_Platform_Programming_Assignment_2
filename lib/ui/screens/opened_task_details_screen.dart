@@ -11,27 +11,24 @@ class CurrentTaskDetailsUi extends StatelessWidget {
   final String? code;
 
   final bool isComplete;
-  final String resultText;
-  final String notesText;
+
+  final TextEditingController resultController;
+  final TextEditingController notesController;
 
   final VoidCallback? onBack;
   final VoidCallback? onSave;
   final ValueChanged<bool>? onToggleComplete;
-  final ValueChanged<String>? onResultChanged;
-  final ValueChanged<String>? onNotesChanged;
 
   const CurrentTaskDetailsUi({
     super.key,
     required this.title,
     this.code,
     required this.isComplete,
-    this.resultText = '',
-    this.notesText = '',
+    required this.resultController,
+    required this.notesController,
     this.onBack,
     this.onSave,
     this.onToggleComplete,
-    this.onResultChanged,
-    this.onNotesChanged,
   });
 
   @override
@@ -39,9 +36,11 @@ class CurrentTaskDetailsUi extends StatelessWidget {
     final trimmedCode = (code ?? '').trim();
 
     return Scaffold(
+      key: const Key('screen_task_details'),
       appBar: AppBar(
         title: const Text('Task (Current)'),
         leading: IconButton(
+          key: const Key('btn_task_back'),
           icon: const Icon(Icons.arrow_back),
           onPressed: onBack,
           tooltip: 'Back',
@@ -51,22 +50,26 @@ class CurrentTaskDetailsUi extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        key: const Key('btn_task_save'),
         onPressed: onSave,
         icon: const Icon(Icons.check),
         label: const Text('Save'),
       ),
       body: ListView(
+        key: const Key('list_task_details'),
         padding: const EdgeInsets.all(16),
         children: [
-          // Header card
           Card(
+            key: const Key('card_task_header'),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
+                key: const Key('col_task_header'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
+                    key: const Key('text_task_title'),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -74,20 +77,23 @@ class CurrentTaskDetailsUi extends StatelessWidget {
                   ),
                   if (trimmedCode.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    Text('Code: $trimmedCode'),
+                    Text('Code: $trimmedCode', key: const Key('text_task_code')),
                   ],
                   const SizedBox(height: 12),
                   Row(
+                    key: const Key('row_task_status'),
                     children: [
                       Expanded(
                         child: Text(
                           isComplete ? 'Status: Complete' : 'Status: Incomplete',
+                          key: const Key('text_task_status'),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
                       ),
                       Switch(
+                        key: const Key('switch_task_complete'),
                         value: isComplete,
                         onChanged: onToggleComplete,
                       ),
@@ -100,15 +106,18 @@ class CurrentTaskDetailsUi extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          const _SectionTitle(title: 'Result'),
+          const _SectionTitle(
+            key: Key('section_result'),
+            title: 'Result',
+          ),
           const SizedBox(height: 8),
           Card(
+            key: const Key('card_result'),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: TextField(
-                key: const ValueKey('resultField'),
-                controller: TextEditingController(text: resultText),
-                onChanged: onResultChanged,
+                key: const Key('field_task_result'),
+                controller: resultController,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText:
@@ -123,15 +132,18 @@ class CurrentTaskDetailsUi extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          const _SectionTitle(title: 'Notes'),
+          const _SectionTitle(
+            key: Key('section_notes'),
+            title: 'Notes',
+          ),
           const SizedBox(height: 8),
           Card(
+            key: const Key('card_notes'),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: TextField(
-                key: const ValueKey('notesField'),
-                controller: TextEditingController(text: notesText),
-                onChanged: onNotesChanged,
+                key: const Key('field_task_notes'),
+                controller: notesController,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Add notes (optional).',
@@ -153,12 +165,13 @@ class CurrentTaskDetailsUi extends StatelessWidget {
 class _SectionTitle extends StatelessWidget {
   final String title;
 
-  const _SectionTitle({required this.title});
+  const _SectionTitle({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       title,
+      key: Key('text_section_${title.toLowerCase()}'),
       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
     );
   }
@@ -177,8 +190,7 @@ class OpenedTaskDetailsContainer extends StatefulWidget {
       _OpenedTaskDetailsContainerState();
 }
 
-class _OpenedTaskDetailsContainerState
-    extends State<OpenedTaskDetailsContainer> {
+class _OpenedTaskDetailsContainerState extends State<OpenedTaskDetailsContainer> {
   late final TextEditingController _resultController;
   late final TextEditingController _notesController;
 
@@ -221,10 +233,10 @@ class _OpenedTaskDetailsContainerState
         _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
 
     await repo.updateResultAndNotes(
-      taskId: task.id, 
+      taskId: task.id,
       result: newResult,
-      notes: newNotes
-    ); 
+      notes: newNotes,
+    );
 
     if (task.isCompleted != _isComplete) {
       await repo.setCompleted(task.id, _isComplete);
@@ -254,22 +266,24 @@ class _OpenedTaskDetailsContainerState
   Widget build(BuildContext context) {
     final taskRepo = context.read<TaskRepository>();
 
-    final Stream<TaskUi?> taskUi$ = 
-      taskRepo.watchById(widget.taskId).map((task) => task?.toUi()); 
+    final Stream<TaskUi?> taskUi$ =
+        taskRepo.watchById(widget.taskId).map((task) => task?.toUi());
+
     return StreamBuilder<TaskUi?>(
       stream: taskUi$,
       builder: (context, snapshot) {
         final task = snapshot.data;
 
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            task == null) {
+        if (snapshot.connectionState == ConnectionState.waiting && task == null) {
           return const Scaffold(
+            key: Key('screen_task_loading'),
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (task == null) {
           return const Scaffold(
+            key: Key('screen_task_not_found'),
             body: Center(child: Text('Task not found')),
           );
         }
@@ -279,13 +293,11 @@ class _OpenedTaskDetailsContainerState
         return CurrentTaskDetailsUi(
           title: task.title,
           isComplete: _isComplete,
-          resultText: _resultController.text,
-          notesText: _notesController.text,
+          resultController: _resultController,
+          notesController: _notesController,
           onBack: () => Navigator.of(context).pop(),
           onSave: () => _save(task),
           onToggleComplete: _toggleComplete,
-          onResultChanged: (v) => _resultController.text = v,
-          onNotesChanged: (v) => _notesController.text = v,
         );
       },
     );

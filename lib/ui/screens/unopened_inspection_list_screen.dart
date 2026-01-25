@@ -13,11 +13,7 @@ import 'unopened_inspection_details_screen.dart';
 class UnopenedInspectionListScreen extends StatelessWidget {
   final List<InspectionUi> inspections;
   final int inProgressCount;
-
-  /// Optional: preloaded tasks so we can show counts in the list.
   final Map<String, List<TaskUi>> tasksByInspectionId;
-
-  /// Optional: let the container decide navigation / behavior.
   final void Function(InspectionUi inspection)? onTapInspection;
 
   const UnopenedInspectionListScreen({
@@ -31,11 +27,10 @@ class UnopenedInspectionListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const Key('screen_unopened_list'),
       appBar: AppBar(
         title: Text('Inspections ($inProgressCount in progress)'),
-        actions: const [
-          ThemeToggleButton(),
-        ],
+        actions: const [ThemeToggleButton()],
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
@@ -43,21 +38,20 @@ class UnopenedInspectionListScreen extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           final inspection = inspections[index];
-          final taskCount =
-              (tasksByInspectionId[inspection.id] ?? const []).length;
+          final taskCount = (tasksByInspectionId[inspection.id] ?? const []).length;
 
           return Card(
             child: ListTile(
+              key: Key('tile_unopened_inspection_$index'),
               title: Text(
                 inspection.aircraftId,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-
-              trailing: Text('$taskCount tasks'),
-
-              onTap: onTapInspection == null
-                  ? null
-                  : () => onTapInspection!(inspection),
+              trailing: Text(
+                '$taskCount tasks',
+                key: Key('text_unopened_task_count_$index'),
+              ),
+              onTap: onTapInspection == null ? null : () => onTapInspection!(inspection),
             ),
           );
         },
@@ -66,8 +60,6 @@ class UnopenedInspectionListScreen extends StatelessWidget {
   }
 }
 
-
-/// Container: resolves streams + maps domain -> UI values, then hands plain values to UI.
 class UnopenedInspectionListContainer extends StatelessWidget {
   const UnopenedInspectionListContainer({super.key});
 
@@ -87,14 +79,14 @@ class UnopenedInspectionListContainer extends StatelessWidget {
         final inspectionIds = inspections.map((i) => i.id).toList();
 
         final tasksByInspectionId$ = tasksRepo
-            .watchByInspectionIds(inspectionIds) 
+            .watchByInspectionIds(inspectionIds)
             .map((tasks) {
-              final map = <String, List<TaskUi>>{};
-              for (final t in tasks.toUiList()) {
-                (map[t.inspectionId] ??= []).add(t);
-              }
-              return map;
-            });
+          final map = <String, List<TaskUi>>{};
+          for (final t in tasks.toUiList()) {
+            (map[t.inspectionId] ??= []).add(t);
+          }
+          return map;
+        });
 
         return StreamBuilder<int>(
           stream: inProgress$,
