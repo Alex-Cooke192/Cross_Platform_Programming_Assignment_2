@@ -21,25 +21,24 @@ class SignedInAs extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(
-          Icons.person,
-          size: 18,
-        ),
+        const Icon(Icons.person, size: 18),
         const SizedBox(width: 6),
-        Text(
-          'Signed in as ',
-          style: theme.textTheme.bodySmall,
-        ),
-        Text(
-          userLabel,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.bold,
+
+        // Make the *name* flexible so it can shrink/ellipsis in the tight AppBar area
+        Flexible(
+          child: Text(
+            'Signed in as $userLabel',
+            style: theme.textTheme.bodySmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
           ),
         ),
       ],
     );
   }
 }
+
 
 class SignedInAsContainer extends StatelessWidget {
   const SignedInAsContainer({super.key});
