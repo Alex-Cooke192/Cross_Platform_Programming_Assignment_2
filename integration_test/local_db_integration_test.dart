@@ -23,8 +23,7 @@ void main() {
       await db.close();
     });
 
-    testWidgets('DAO write paths + pending query + purge + sync adapter', (tester) async {
-      // ---- DAO writes ----
+    test('DAO write paths + pending query + purge + sync adapter', () async {
       await db.inspectionDao.insertInspection(id: 'i1', aircraftId: 'A1', technicianId: 't1');
       await db.inspectionDao.insertInspection(id: 'i2', aircraftId: 'A2', technicianId: 't1');
 
@@ -46,13 +45,11 @@ void main() {
       expect(afterOpen!.openedAt, isNotNull);
       expect(afterOpen.syncStatus, equals(kSyncPending));
 
-      // ---- getPendingChanges filter ----
       final cutoff = DateTime.now().subtract(const Duration(seconds: 1));
       final pendingSince = await db.inspectionDao.getPendingChanges(since: cutoff);
       final pendingIds = pendingSince.map((r) => r.id).toList();
       expect(pendingIds, contains('i1'));
 
-      // ---- completion + purge ----
       await db.inspectionDao.setCompleted('i1', true);
       await db.inspectionDao.markSyncedByIds(['i1']);
 
@@ -69,7 +66,6 @@ void main() {
       final i1AfterPurge = await db.inspectionDao.watchById('i1').first;
       expect(i1AfterPurge, isNull);
 
-      // ---- adapter applyServerChanges ----
       await adapter.applyServerChanges(serverChanges: {
         'technicians_cache': [
           {
@@ -113,15 +109,13 @@ void main() {
       expect(serverInsp.completedAt, isNotNull);
       expect(serverInsp.syncStatus, equals(kSyncSynced));
 
-      final serverTasks = await (db.select(db.tasks)
-            ..where((t) => t.id.equals('k_server')))
+      final serverTasks = await (db.select(db.tasks)..where((t) => t.id.equals('k_server')))
           .getSingleOrNull();
       expect(serverTasks, isNotNull);
       expect(serverTasks!.inspectionId, equals('i_server'));
       expect(serverTasks.title, equals('Server task'));
       expect(serverTasks.isCompleted, isTrue);
 
-      // ---- adapter markAppliedAsSynced ----
       await db.inspectionDao.insertInspection(id: 'i_local', aircraftId: 'A-LOC');
       final beforeMark = await db.inspectionDao.watchById('i_local').first;
       expect(beforeMark, isNotNull);
