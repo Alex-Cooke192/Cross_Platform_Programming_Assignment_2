@@ -25,6 +25,8 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   AppDatabase.forExecutor(super.e);
 
+  AppDatabase.forTesting(QueryExecutor executor) : super(executor); 
+
   @override
   int get schemaVersion => 2;
 
