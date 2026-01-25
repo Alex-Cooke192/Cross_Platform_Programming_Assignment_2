@@ -33,6 +33,7 @@ class CompletedInspectionListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: const Key('screen_completed_list'), 
       appBar: AppBar(
         centerTitle: true,
         title: const Text('Completed Inspections'),
