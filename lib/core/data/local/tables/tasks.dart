@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'inspections.dart';
 
 @TableIndex(
   name: 'tasks_inspection_id',
@@ -7,9 +8,8 @@ import 'package:drift/drift.dart';
 class Tasks extends Table {
   TextColumn get id => text()(); // Uuid string
 
-  TextColumn get inspectionId => text().customConstraint(
-    'NOT NULL REFERENCES inspections(id) ON DELETE CASCADE'
-  )(); 
+  TextColumn get inspectionId => text()
+      .references(Inspections, #id, onDelete: KeyAction.cascade)(); 
 
   TextColumn get title => text()();
 

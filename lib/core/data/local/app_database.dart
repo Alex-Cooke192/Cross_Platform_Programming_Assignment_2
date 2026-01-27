@@ -9,26 +9,28 @@ import 'package:path_provider/path_provider.dart';
 import 'tables/inspections.dart';
 import 'tables/tasks.dart';
 import 'tables/technicians_cache.dart';
+import 'tables/attachments.dart';
 
 // DAOs
 import 'daos/inspection_dao.dart';
 import 'daos/task_dao.dart';
 import 'daos/technician_dao.dart';
+import 'daos/attachments_dao.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [Inspections, Tasks, TechniciansCache],
-  daos: [InspectionDao, TaskDao, TechnicianDao],
+  tables: [Inspections, Tasks, TechniciansCache, Attachments],
+  daos: [InspectionDao, TaskDao, TechnicianDao, AttachmentsDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   AppDatabase.forExecutor(super.e);
 
-  AppDatabase.forTesting(QueryExecutor executor) : super(executor); 
+  AppDatabase.forTesting(super.executor); 
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -84,6 +86,10 @@ class AppDatabase extends _$AppDatabase {
                 syncStatus: const Value('synced'),
               ),
             );
+          }
+
+          if (from < 3) {
+            await m.createTable(attachments); 
           }
         },
       );
