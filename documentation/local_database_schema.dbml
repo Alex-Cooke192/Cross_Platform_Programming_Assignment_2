@@ -7,8 +7,8 @@ Table technicians_cache {
   id text [pk]                 // UUID from server / domain
   name text [not null]         // display name
 
-  created_at datetime [not null]
-  updated_at datetime [not null]
+  created_at datetime [not null, default: `currentDateAndTime` | `DateTime.now()`]
+  updated_at datetime [not null, default: `DateTime.now()`]
 
   sync_status text [not null, default: 'pending']
 }
@@ -19,13 +19,13 @@ Table inspections {
 
   opened_at datetime           // nullable
 
-  created_at datetime [not null]
-  updated_at datetime [not null]
+  created_at datetime [not null, default: `currentDateAndTime`]
+  updated_at datetime [not null, default: `DateTime.now()`]
 
   is_completed boolean [not null, default: false]
   completed_at datetime        // nullable
 
-  technician_id text           // nullable FK -> technicians_cache.id
+  technician_id text           // nullable (no FK constraint in Drift table)
 
   sync_status text [not null, default: 'pending']
 }
@@ -40,8 +40,8 @@ Table tasks {
   result text                   // nullable
   notes text                    // nullable
 
-  created_at datetime [not null]
-  updated_at datetime [not null]
+  created_at datetime [not null, default: `DateTime.now()`]
+  updated_at datetime [not null, default: `DateTime.now()`]
 
   sync_status text [not null, default: 'pending']
 
@@ -50,6 +50,25 @@ Table tasks {
   }
 }
 
-Ref: inspections.technician_id > technicians_cache.id
-Ref: tasks.inspection_id > inspections.id [delete: cascade]
+Table attachments {
+  id text [pk]                  // UUID (matches client attachment id)
+  task_id text [not null, unique] // FK -> tasks.id (ON DELETE CASCADE), max 1 per task
 
+  file_name text [not null]
+  mime_type text [not null]
+  size_bytes int [not null]
+
+  sha256 text                   // nullable
+  local_path text               // nullable
+  remote_key text               // nullable (may be null until uploaded)
+
+  sync_status text [not null, default: 'pending']
+
+  created_at datetime [not null, default: `currentDateAndTime`]
+  updated_at datetime [not null, default: `currentDateAndTime`]
+
+  // (optional to note here) Drift enforces FK via .references(...) on task_id
+}
+
+Ref: tasks.inspection_id > inspections.id [delete: cascade]
+Ref: attachments.task_id > tasks.id [delete: cascade]
