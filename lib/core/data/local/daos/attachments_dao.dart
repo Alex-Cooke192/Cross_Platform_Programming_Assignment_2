@@ -27,7 +27,11 @@ class AttachmentsDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<List<Attachment>> getPendingUploads() {
-    return (select(attachments)..where((t) => t.syncStatus.equals(kSyncPending)))
+    return (select(attachments)
+          ..where((t) =>
+              t.syncStatus.equals(kSyncPending) &
+              t.localPath.isNotNull() &
+              t.remoteKey.isNull()))
         .get();
   }
 
