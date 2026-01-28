@@ -4,107 +4,110 @@ sequenceDiagram
 
   actor Tech as Technician
   participant UI as Flutter UI
-  participant Repos as Repositories
-  participant DAOs as DAOs
-  participant LDB as Local DB (Drift / SQLite)
   participant Sync as Sync Engine
+  participant LDB as Local DB
   participant API as Remote Sync API
   participant RDB as Remote DB
+  participant Blob as File Storage
 
-  Tech->>UI: Tap "Sync" logo
-  UI-->>Tech: Prompt for API Key
-  Tech->>UI: Enter API Key + Tap "Confirm Sync"
+  Tech->>UI: Tap Sync
+  UI-->>Tech: Prompt for API key
+  Tech->>UI: Enter API key and confirm
 
-  alt API Key missing
-    UI-->>Tech: Error: API Key required
-  else API Key provided
+  alt Missing API key
+    UI-->>Tech: Show error
+  else API key provided
     UI->>Sync: syncNow(apiKey)
 
-    Sync->>DAOs: getLastSyncAt()
-    DAOs->>LDB: SELECT last_sync_at FROM sync_state LIMIT 1
-    LDB-->>DAOs: lastSyncAt (nullable)
-    DAOs-->>Sync: lastSyncAt
+    %% Determine baseline
+    Sync->>LDB: Read last sync marker
+    LDB-->>Sync: lastSyncAt or null
 
-    alt lastSyncAt is null (first sync / force bootstrap)
-      Sync->>API: GET /bootstrap\nHeaders: X-API-Key / Bearer apiKey
-      API->>API: Validate API Key
-
-      alt API Key invalid
-        API-->>Sync: 401 Unauthorized
-        Sync-->>UI: Sync failed (Unauthorized)
-        UI-->>Tech: Invalid API Key
-      else API Key valid
-        API->>RDB: SELECT technicians (+ optionally inspections metadata)
-        RDB-->>API: bootstrapSet
-        API-->>Sync: 200 OK (bootstrapSet, serverTime)
-
-        Sync->>DAOs: applyBootstrap(bootstrapSet, serverTime)
-        DAOs->>LDB: UPSERT technicians_cache
-        DAOs->>LDB: UPDATE sync_state\nSET last_sync_at=serverTime
-        LDB-->>DAOs: OK
-        DAOs-->>Sync: OK
+    alt First sync required
+      Sync->>API: GET bootstrap
+      API->>API: Validate API key
+      alt Unauthorized
+        API-->>Sync: 401
+        Sync-->>UI: Sync blocked
+        UI-->>Tech: Invalid API key
+      else Authorized
+        API->>RDB: Read bootstrap set
+        RDB-->>API: bootstrap set
+        API-->>Sync: bootstrap + serverTime
+        Sync->>LDB: Apply bootstrap (upsert)
+        Sync->>LDB: Save lastSyncAt
+        Sync-->>UI: Bootstrap complete
       end
     end
 
-    Sync->>DAOs: fetchPendingChanges(lastSyncAt)
-    DAOs->>LDB: SELECT * FROM tables\nWHERE sync_status="pending"
-    LDB-->>DAOs: pending rows
-    DAOs-->>Sync: changeSet
+    %% Collect local work
+    Sync->>LDB: Read pending inspections
+    Sync->>LDB: Read pending tasks
+    Sync->>LDB: Read pending attachment metadata
+    LDB-->>Sync: changeSet
 
-    alt changeSet is empty
+    alt No pending changes
       Sync-->>UI: Nothing to sync
       UI-->>Tech: Up to date
-    else changeSet has changes
-      Sync->>API: POST /sync (changeSet)\nHeaders: X-API-Key / Bearer apiKey
+    else Pending changes exist
+      %% Phase 1: sync metadata (rows only)
+      Sync->>API: POST sync jobs (rows + attachment metadata)
+      API->>API: Validate API key
 
-      API->>API: Validate API Key
-      alt API Key invalid
-        API-->>Sync: 401 Unauthorized
-        Sync-->>UI: Sync failed (Unauthorized)
-        UI-->>Tech: Invalid API Key
-      else API Key valid
-        API->>RDB: BEGIN TRANSACTION
-        API->>RDB: Validate changeSet\n(ids, FKs, timestamps)
-
-        alt changeSet validation fails
-          API->>RDB: ROLLBACK
-          API-->>Sync: 409 Conflict / 400 Error
-          Sync-->>UI: Sync failed (conflict)
+      alt Unauthorized
+        API-->>Sync: 401
+        Sync-->>UI: Sync blocked
+        UI-->>Tech: Invalid API key
+      else Authorized
+        API->>RDB: Validate ids and foreign keys
+        alt Conflict or invalid payload
+          API-->>Sync: Conflict response
+          Sync-->>UI: Sync failed
           UI-->>Tech: Conflict message
-        else changeSet validation ok
-          API->>RDB: UPSERT inspections
-          API->>RDB: UPSERT tasks
-          API->>RDB: Write sync metadata (serverTime)
-          API->>RDB: COMMIT
+        else Accepted
+          API->>RDB: Upsert inspections
+          API->>RDB: Upsert tasks
+          API->>RDB: Upsert attachment metadata
+          API->>RDB: Commit and compute serverTime
           RDB-->>API: OK
+          API-->>Sync: applied ids + serverTime + uploadRequired list
 
-          API-->>Sync: 200 OK (appliedIds, serverTime)
+          Sync->>LDB: Mark synced rows (inspections/tasks)
+          Sync->>LDB: Mark synced attachment metadata
+          Sync->>LDB: Update lastSyncAt
 
-          Sync->>DAOs: markSynced(appliedIds, serverTime)
-          DAOs->>LDB: UPDATE rows\nSET sync_status="synced", synced_at=serverTime
-          DAOs->>LDB: UPDATE sync_state\nSET last_sync_at=serverTime
-          LDB-->>DAOs: OK
-          DAOs-->>Sync: OK
-
-          opt Pull remote delta
-            Sync->>API: GET /changes?since=lastSyncAt\nHeaders: X-API-Key / Bearer apiKey
-            API->>RDB: SELECT updated rows since lastSyncAt
-            RDB-->>API: deltaSet
-            API-->>Sync: 200 OK (deltaSet, serverTime)
-
-            Sync->>DAOs: applyRemoteDelta(deltaSet, serverTime)
-            DAOs->>LDB: UPSERT delta rows
-            DAOs->>LDB: UPDATE sync_state\nSET last_sync_at=serverTime
-            LDB-->>DAOs: OK
+          %% Phase 2: upload file bytes (only when required)
+          loop For each attachment requiring upload
+            Sync->>LDB: Read attachment info
+            LDB-->>Sync: local file reference + metadata
+            Sync->>Blob: Upload file bytes (auth)
+            alt Upload success
+              Blob-->>Sync: storage key
+              Sync->>API: POST attachment confirm (id + storage key)
+              API->>RDB: Store storage key for attachment
+              RDB-->>API: OK
+              API-->>Sync: OK
+              Sync->>LDB: Save storage key and mark attachment synced
+            else Upload failure
+              Blob-->>Sync: Error
+              Sync->>LDB: Keep attachment pending for retry
+            end
           end
 
-          Sync-->>UI: Sync successful
-          UI-->>Tech: Confirmation message
+          %% Optional pull of remote delta
+          opt Pull remote changes since lastSyncAt
+            Sync->>API: GET changes since lastSyncAt
+            API->>RDB: Read delta rows
+            RDB-->>API: delta set
+            API-->>Sync: delta set + serverTime
+            Sync->>LDB: Apply delta (upsert)
+            Sync->>LDB: Update lastSyncAt
+          end
+
+          Sync-->>UI: Sync complete
+          UI-->>Tech: Confirmation
         end
       end
     end
   end
-
-
-
   ```
