@@ -1,7 +1,10 @@
+import 'package:drift/drift.dart';
+import '../sync/sync_constants.dart';
 import 'package:maintenance_system/core/data/local/app_database.dart';
 import 'package:maintenance_system/core/data/sync/local_sync_adapter.dart';
+import 'package:maintenance_system/core/data/sync/i_local_attachment_upload_adapter.dart';
 
-class DriftLocalSyncAdapter implements LocalSyncAdapter {
+class DriftLocalSyncAdapter implements LocalSyncAdapter, LocalAttachmentUploadAdapter {
   DriftLocalSyncAdapter(this.db);
 
   final AppDatabase db;
@@ -24,7 +27,6 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
   }
 
   List<String> _idsFromOutcome(dynamic tableMap, String outcome) {
-    // tableMap is expected to be: {"inserted":[...], "updated":[...], ...}
     if (tableMap is! Map) return const [];
     final v = tableMap[outcome];
     if (v is! List) return const [];
@@ -32,7 +34,6 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
   }
 
   List<String> _combinedSyncedIds(dynamic tableMap) {
-    // Mark these as synced: inserted + updated + skipped
     final inserted = _idsFromOutcome(tableMap, 'inserted');
     final updated = _idsFromOutcome(tableMap, 'updated');
     final skipped = _idsFromOutcome(tableMap, 'skipped');
@@ -49,6 +50,9 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
     final techs = await db.technicianDao.getPendingChanges(since: lastSyncAt);
     final insps = await db.inspectionDao.getPendingChanges(since: lastSyncAt);
     final tasks = await db.taskDao.getPendingChanges(since: lastSyncAt);
+
+    // Attachments: keep it metadata-only (no bytes). Only pending items.
+    final atts = await db.attachmentsDao.getPendingMetadataSync();
 
     final techMaps = techs
         .map((t) => <String, dynamic>{
@@ -85,10 +89,25 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
             })
         .toList();
 
+    final attMaps = atts
+        .map((a) => <String, dynamic>{
+              'id': a.id,
+              'task_id': a.taskId,
+              'file_name': a.fileName,
+              'mime_type': a.mimeType,
+              'size_bytes': a.sizeBytes,
+              'sha256': a.sha256,
+              'remote_key': a.remoteKey,
+              'created_at': a.createdAt.toUtc().toIso8601String(),
+              'updated_at': a.updatedAt.toUtc().toIso8601String(),
+            })
+        .toList();
+
     return <String, List<Map<String, dynamic>>>{
       'technicians_cache': techMaps,
       'inspections': inspMaps,
       'tasks': taskMaps,
+      'attachments': attMaps,
     };
   }
 
@@ -102,9 +121,10 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
     final techs = serverChanges['technicians_cache'] ?? const [];
     final insps = serverChanges['inspections'] ?? const [];
     final tasks = serverChanges['tasks'] ?? const [];
+    final atts = serverChanges['attachments'] ?? const [];
 
     await db.transaction(() async {
-      // FK-safe order: technicians -> inspections -> tasks
+      // FK-safe order: technicians -> inspections -> tasks -> attachments
 
       for (final t in techs) {
         final id = (t['id'] ?? '').toString();
@@ -115,7 +135,7 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
         final displayName = (t['display_name'] ?? '').toString().trim();
 
         final effectiveName =
-          username.isNotEmpty ? username : (name.isNotEmpty ? name : displayName);
+            username.isNotEmpty ? username : (name.isNotEmpty ? name : displayName);
 
         if (effectiveName.isEmpty) continue;
 
@@ -170,6 +190,40 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
           notes: (tk['notes'] as String?),
         );
       }
+
+      for (final a in atts) {
+        final id = (a['id'] ?? '').toString();
+        final taskId = (a['task_id'] ?? '').toString();
+        final fileName = (a['file_name'] ?? '').toString();
+        final mimeType = (a['mime_type'] ?? '').toString();
+
+        if (id.isEmpty || taskId.isEmpty || fileName.isEmpty || mimeType.isEmpty) {
+          continue;
+        }
+
+        final createdAt = _parseDate(a['created_at']) ?? DateTime.now();
+        final updatedAt = _parseDate(a['updated_at']) ?? DateTime.now();
+
+        // Preserve localPath so we don't wipe the on-device file reference
+        final existing = await db.attachmentsDao.getByTaskId(taskId);
+        final preservedLocalPath = existing?.localPath;
+
+        await db.attachmentsDao.upsert(
+          AttachmentsCompanion(
+            id: Value(id),
+            taskId: Value(taskId),
+            fileName: Value(fileName),
+            mimeType: Value(mimeType),
+            sizeBytes: Value((a['size_bytes'] as int?) ?? 0),
+            sha256: Value(a['sha256'] as String?),
+            localPath: Value(preservedLocalPath),
+            remoteKey: Value(a['remote_key'] as String?),
+            createdAt: Value(createdAt),
+            updatedAt: Value(updatedAt),
+            syncStatus: const Value(kSyncSynced),
+          ),
+        );
+      }
     });
   }
 
@@ -181,32 +235,43 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
     required Map<String, dynamic> applied,
     required Map<String, dynamic> appliedIds,
   }) async {
-    // appliedIds expected:
-    // {
-    //   "technicians_cache": {"inserted":[...], "updated":[...], "skipped":[...], "conflict":[...]},
-    //   "inspections": {"inserted":[...], ...},
-    //   "tasks": {"inserted":[...], ...}
-    // }
-
     final techMap = appliedIds['technicians_cache'];
     final inspMap = appliedIds['inspections'];
     final taskMap = appliedIds['tasks'];
+    final attMap = appliedIds['attachments'];
 
     final techSynced = _combinedSyncedIds(techMap);
     final inspSynced = _combinedSyncedIds(inspMap);
     final taskSynced = _combinedSyncedIds(taskMap);
+    final attInserted = _idsFromOutcome(attMap, 'inserted');
+    final attUpdated  = _idsFromOutcome(attMap, 'updated');
+    final attSynced   = <String>{...attInserted, ...attUpdated}.toList();
 
     final techConflicts = _idsFromOutcome(techMap, 'conflict');
     final inspConflicts = _idsFromOutcome(inspMap, 'conflict');
     final taskConflicts = _idsFromOutcome(taskMap, 'conflict');
+    // Conflict marking
+    // final attConflicts = _idsFromOutcome(attMap, 'conflict');
 
     await db.transaction(() async {
-      // Mark synced
       await db.technicianDao.markSyncedByIds(techSynced);
       await db.inspectionDao.markSyncedByIds(inspSynced);
       await db.taskDao.markSyncedByIds(taskSynced);
 
-      // Mark conflicts
+      // AttachmentsDao does not have markSyncedByIds/markConflictByIds,
+      // so we mark one-by-one using existing methods.
+      for (final id in attSynced) {
+        await db.attachmentsDao.markSynced(id);
+      }
+      /*
+      CONFLICT MARKING TO BE ADDED
+      for (final id in attConflicts) {
+        // You don't currently have markConflict in AttachmentsDao.
+        // If you want true conflict marking, add a markConflict(id) method.
+        // For now, we leave conflicts unmodified to stay within your current DAO methods.
+      }
+      */
+
       await db.technicianDao.markConflictByIds(techConflicts);
       await db.inspectionDao.markConflictByIds(inspConflicts);
       await db.taskDao.markConflictByIds(taskConflicts);
@@ -229,5 +294,24 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter {
     final row = await (db.select(db.techniciansCache)..limit(1)).getSingleOrNull();
     return row != null;
   }
-}
 
+  // -----------------------
+  // Attachment upload helpers
+  // -----------------------
+  @override
+  Future<List<PendingAttachmentUpload>> getPendingAttachmentUploads() async {
+    final rows = await db.attachmentsDao.getPendingUploads();
+    return rows
+        .map((a) => PendingAttachmentUpload(
+              id: a.id,
+              localPath: a.localPath,
+            ))
+        .toList();
+  }
+
+  @override
+  Future<void> setAttachmentRemoteKey(
+      String attachmentId, String remoteKey) async {
+    await db.attachmentsDao.setRemoteKey(attachmentId, remoteKey);
+  }
+}

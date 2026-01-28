@@ -5,6 +5,7 @@ import '../../core/data/local/repositories/task_repository.dart';
 import '../../models/ui_models.dart';
 import 'package:maintenance_system/ui/widgets/theme_toggle_button.dart';
 import '../../models/task_mapper.dart';
+import 'add_attachments_screen.dart';
 
 class CurrentTaskDetailsUi extends StatelessWidget {
   final String title;
@@ -19,6 +20,8 @@ class CurrentTaskDetailsUi extends StatelessWidget {
   final VoidCallback? onSave;
   final ValueChanged<bool>? onToggleComplete;
 
+  final VoidCallback? onAddAttachment;
+
   const CurrentTaskDetailsUi({
     super.key,
     required this.title,
@@ -29,6 +32,7 @@ class CurrentTaskDetailsUi extends StatelessWidget {
     this.onBack,
     this.onSave,
     this.onToggleComplete,
+    this.onAddAttachment,
   });
 
   @override
@@ -45,8 +49,15 @@ class CurrentTaskDetailsUi extends StatelessWidget {
           onPressed: onBack,
           tooltip: 'Back',
         ),
-        actions: const [
-          ThemeToggleButton(),
+        actions: [
+          // new button in app bar
+          IconButton(
+            key: const Key('btn_open_add_attachment'),
+            tooltip: 'Add attachment',
+            icon: const Icon(Icons.attach_file),
+            onPressed: onAddAttachment,
+          ),
+          const ThemeToggleButton(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -87,9 +98,10 @@ class CurrentTaskDetailsUi extends StatelessWidget {
                         child: Text(
                           isComplete ? 'Status: Complete' : 'Status: Incomplete',
                           key: const Key('text_task_status'),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                       ),
                       Switch(
@@ -98,6 +110,39 @@ class CurrentTaskDetailsUi extends StatelessWidget {
                         onChanged: onToggleComplete,
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Attachment section
+          _SectionTitle(
+            key: const Key('section_attachment'),
+            title: 'Attachment',
+          ),
+          const SizedBox(height: 8),
+          Card(
+            key: const Key('card_attachment'),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                key: const Key('col_attachment'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Add or replace the attachment for this task.',
+                    key: const Key('text_attachment_blurb'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    key: const Key('btn_add_attachment'),
+                    onPressed: onAddAttachment,
+                    icon: const Icon(Icons.attach_file),
+                    label: const Text('Add / replace attachment'),
                   ),
                 ],
               ),
@@ -262,6 +307,14 @@ class _OpenedTaskDetailsContainerState extends State<OpenedTaskDetailsContainer>
     });
   }
 
+  void _openAttachments() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddAttachmentsContainer(taskId: widget.taskId),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final taskRepo = context.read<TaskRepository>();
@@ -292,12 +345,14 @@ class _OpenedTaskDetailsContainerState extends State<OpenedTaskDetailsContainer>
 
         return CurrentTaskDetailsUi(
           title: task.title,
+          code: task.notes,
           isComplete: _isComplete,
           resultController: _resultController,
           notesController: _notesController,
           onBack: () => Navigator.of(context).pop(),
           onSave: () => _save(task),
           onToggleComplete: _toggleComplete,
+          onAddAttachment: _openAttachments,
         );
       },
     );
