@@ -76,6 +76,15 @@ class AttachmentsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  Future<List<Attachment>> getPendingMetadataSync() {
+    return (select(attachments)
+          ..where((t) =>
+              t.syncStatus.equals(kSyncPending) &
+              t.remoteKey.isNotNull() &
+              t.remoteKey.isNotIn(const [''])))
+        .get();
+  }
+
   Future<int> markSynced(String id, {String? remoteKey}) {
     final now = DateTime.now();
     return (update(attachments)..where((t) => t.id.equals(id))).write(

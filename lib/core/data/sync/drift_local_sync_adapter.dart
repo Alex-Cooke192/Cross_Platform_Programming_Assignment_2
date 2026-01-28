@@ -52,7 +52,7 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter, LocalAttachmentUploadAd
     final tasks = await db.taskDao.getPendingChanges(since: lastSyncAt);
 
     // Attachments: keep it metadata-only (no bytes). Only pending items.
-    final atts = await db.attachmentsDao.getPendingUploads();
+    final atts = await db.attachmentsDao.getPendingMetadataSync();
 
     final techMaps = techs
         .map((t) => <String, dynamic>{
@@ -243,7 +243,9 @@ class DriftLocalSyncAdapter implements LocalSyncAdapter, LocalAttachmentUploadAd
     final techSynced = _combinedSyncedIds(techMap);
     final inspSynced = _combinedSyncedIds(inspMap);
     final taskSynced = _combinedSyncedIds(taskMap);
-    final attSynced = _combinedSyncedIds(attMap);
+    final attInserted = _idsFromOutcome(attMap, 'inserted');
+    final attUpdated  = _idsFromOutcome(attMap, 'updated');
+    final attSynced   = <String>{...attInserted, ...attUpdated}.toList();
 
     final techConflicts = _idsFromOutcome(techMap, 'conflict');
     final inspConflicts = _idsFromOutcome(inspMap, 'conflict');
