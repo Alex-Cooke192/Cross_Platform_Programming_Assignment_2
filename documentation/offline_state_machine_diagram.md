@@ -5,72 +5,73 @@ stateDiagram-v2
   [*] --> AppStarting
   AppStarting --> TechCacheReady : refreshTechnicians
   TechCacheReady --> LoggedOut
+  LoggedOut --> LoggedIn : selectTechnician
+  LoggedIn --> Idle
 
-  LoggedOut --> LoggedIn : technician selected
-  LoggedIn --> Idle : session active
-
-  Idle --> Inspection : open inspection
-  Inspection --> Idle : back
+  Idle --> InspectionOpen : openInspection
+  InspectionOpen --> Idle : backToList
 
   Idle --> LoggedOut : logout
-  Idle --> [*] : app closed
+  Idle --> [*] : appClosed
 
-  state Inspection {
-    direction LR
+  state InspectionOpen {
 
-    [*] --> PROG
-    [*] --> SYNC
-    [*] --> FILES
-    [*] --> OFFLINE
+    [*] --> Progress
 
-    state "Progress (derived)" as PROG {
-      direction LR
-      Outstanding --> InProgress : open
-      InProgress --> Completed : complete
+    state Progress {
+      Outstanding --> InProgress : openInspection
+      InProgress --> Completed : completeInspection
     }
 
-    state "Offline create/edit" as OFFLINE {
-      direction LR
-      Draft --> PendingLocal : create or edit
-      PendingLocal --> PendingLocal : edit again
-    }
-
-    state "Sync status (stored)" as SYNC {
-      direction LR
-
-      Synced --> Pending : local change
-      Pending --> Queued : offline or deferred
-
-      Queued --> SyncAttempt : syncNow(apiKey)
+    state ItemSync {
+      Synced --> Pending : editLocal
+      Pending --> Pending : editLocal
+      Pending --> Queued : deferSync
+      Queued --> SyncAttempt : syncNow
       SyncAttempt --> Synced : success
-
-      SyncAttempt --> Failed : network or server error
-      Failed --> Queued : retry later
-
-      SyncAttempt --> AuthFailed : invalid apiKey
-      AuthFailed --> Queued : re-enter apiKey
-
-      SyncAttempt --> Conflict : conflict detected
-      Conflict --> Queued : resolved (local/server/merge)
+      SyncAttempt --> Queued : failure
+      SyncAttempt --> Conflict : conflict
+      Conflict --> Queued : resolveConflict
+      SyncAttempt --> AuthFailed : authFail
+      AuthFailed --> Queued : reenterKey
     }
 
-    state "Attachments (offline-secure)" as FILES {
-      direction LR
-
-      NoFile --> LocalFile : attach (sandbox)
-      LocalFile --> LocalFile : replace or remove
-
-      LocalFile --> UploadAttempt : upload during sync
-      UploadAttempt --> Uploaded : upload ok
-      UploadAttempt --> LocalFile : upload failed
+    state Attachment {
+      NoFile --> LocalFile : attachFile
+      LocalFile --> LocalFile : replaceFile
+      LocalFile --> NoFile : removeFile
+      LocalFile --> Uploading : uploadDuringSync
+      Uploading --> Uploaded : uploadOk
+      Uploading --> LocalFile : uploadFail
     }
 
-    %% Cross-links (what triggers what)
-    PROG --> OFFLINE : edit inspection or task
-    OFFLINE --> SYNC : mark pending
-
-    FILES --> SYNC : attachment changed
-    SYNC --> FILES : sync includes file upload
+    %% Logical relationships
+    Progress --> ItemSync : editLocal
+    Attachment --> ItemSync : attachmentChanged
+    ItemSync --> Attachment : needsUpload
   }
+
+  note right of Progress
+    Progress is derived from inspection fields.
+    Outstanding means opened_at is null.
+    InProgress means opened_at is set.
+    Completed means completed_at is set.
+  end note
+
+  note right of ItemSync
+    Offline create or edit sets sync_status to pending
+    and updates updated_at.
+    Pending items represent the local sync queue.
+    SyncAttempt requires connectivity and valid apiKey.
+    Conflict indicates server-side version mismatch.
+  end note
+
+  note right of Attachment
+    Files are stored securely in the app sandbox while offline.
+    localPath is set and remoteKey remains null.
+    Upload occurs only during SyncAttempt.
+    Failed uploads retain the local file for retry.
+  end note
+
 
 ```
