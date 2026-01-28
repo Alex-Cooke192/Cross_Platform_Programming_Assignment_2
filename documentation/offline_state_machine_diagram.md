@@ -1,3 +1,4 @@
+```mermaid
 stateDiagram-v2
 
   [*] --> AppStarting
@@ -111,3 +112,4 @@ stateDiagram-v2
 
   Idle --> [*] : app closed
 
+```
