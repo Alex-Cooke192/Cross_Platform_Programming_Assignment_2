@@ -2,57 +2,81 @@
 // Authoritative source of truth
 // UUID primary keys stored as TEXT
 // Timestamps stored as ISO-8601 TEXT
+// Foreign keys enabled (PRAGMA foreign_keys = ON)
 
 Table technicians_cache {
-  id text [pk]
+  id text [pk]                          // UUID
   username text [not null, unique]
   display_name text
   role text [not null, default: 'technician']
 
-  created_at text [not null]
-  updated_at text [not null]
+  created_at text [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at text [not null, default: `CURRENT_TIMESTAMP`]
 
   sync_status text [not null, default: 'synced', note: "CHECK IN ('synced','pending','conflict')"]
 }
 
 Table inspections {
-  id text [pk]
-  aircraft_id text [not null]
+  id text [pk]                          // UUID
+  aircraft_id text [not null]           // e.g. 'G-ABCD'
 
-  opened_at text               // nullable
-  completed_at text            // nullable
+  opened_at text                        // nullable
+  completed_at text                     // nullable
 
-  technician_id text           // nullable FK -> technicians_cache.id
+  technician_id text                    // nullable FK -> technicians_cache.id
 
-  created_at text [not null]
-  updated_at text [not null]
+  created_at text [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at text [not null, default: `CURRENT_TIMESTAMP`]
 
   sync_status text [not null, default: 'synced', note: "CHECK IN ('synced','pending','conflict')"]
 }
 
 Table tasks {
-  id text [pk]
-  inspection_id text [not null] // FK -> inspections.id (ON DELETE CASCADE)
+  id text [pk]                          // UUID
+  inspection_id text [not null]         // FK -> inspections.id (ON DELETE CASCADE)
 
   title text [not null]
   description text
-
   is_complete int [not null, default: 0, note: "CHECK IN (0,1)"]
+
   result text
   notes text
   completed_at text
 
-  created_at text [not null]
-  updated_at text [not null]
+  created_at text [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at text [not null, default: `CURRENT_TIMESTAMP`]
 
   sync_status text [not null, default: 'synced', note: "CHECK IN ('synced','pending','conflict')"]
 
   Indexes {
     (inspection_id) [name: "idx_tasks_inspection_id"]
-    (is_complete) [name: "idx_tasks_complete"]
+    (is_complete)   [name: "idx_tasks_complete"]
+  }
+}
+
+Table attachments {
+  id text [pk]                          // UUID (matches client attachment id)
+  task_id text [not null, unique]       // enforce max-1 attachment per task
+
+  file_name text [not null]             // original name from client
+  mime_type text [not null]
+  size_bytes int [not null]
+
+  sha256 text                           // nullable (optional)
+  remote_key text [not null]            // server blob storage path/key
+
+  created_at text [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at text [not null, default: `CURRENT_TIMESTAMP`]
+
+  sync_status text [not null, default: 'synced', note: "CHECK IN ('synced','pending','conflict')"]
+
+  Indexes {
+    (task_id)     [name: "idx_attachments_task_id"]
+    (remote_key)  [name: "idx_attachments_remote_key"]
   }
 }
 
 Ref: inspections.technician_id > technicians_cache.id [delete: set null]
 Ref: tasks.inspection_id > inspections.id [delete: cascade]
+Ref: attachments.task_id > tasks.id [delete: cascade]
 
