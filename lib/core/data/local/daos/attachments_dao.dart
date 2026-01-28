@@ -31,7 +31,8 @@ class AttachmentsDao extends DatabaseAccessor<AppDatabase>
           ..where((t) =>
               t.syncStatus.equals(kSyncPending) &
               t.localPath.isNotNull() &
-              t.remoteKey.isNull()))
+              t.localPath.isNotIn(const ['']) &
+              (t.remoteKey.isNull() | t.remoteKey.equals(''))))
         .get();
   }
 
