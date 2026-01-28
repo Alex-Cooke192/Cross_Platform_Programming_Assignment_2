@@ -1,17 +1,16 @@
 // attachment_repository.dart
 import 'package:drift/drift.dart';
 import '../app_database.dart';
-import '../daos/attachments_dao.dart';
 
 class AttachmentsRepository {
-  final AttachmentsDao _dao;
+  final AppDatabase db;
 
-  AttachmentsRepository(this._dao);
+  AttachmentsRepository(this.db);
 
   // Reads
-  Future<Attachment?> getForTask(String taskId) => _dao.getByTaskId(taskId);
-  Stream<Attachment?> watchForTask(String taskId) => _dao.watchByTaskId(taskId);
-  Future<List<Attachment>> getPendingUploads() => _dao.getPendingUploads();
+  Future<Attachment?> getForTask(String taskId) => db.attachmentsDao.getByTaskId(taskId);
+  Stream<Attachment?> watchForTask(String taskId) => db.attachmentsDao.watchByTaskId(taskId);
+  Future<List<Attachment>> getPendingUploads() => db.attachmentsDao.getPendingUploads();
 
   // Writes
 
@@ -26,7 +25,7 @@ class AttachmentsRepository {
     String? sha256,
     String? localPath,
   }) {
-    return _dao.replaceForTask(
+    return db.attachmentsDao.replaceForTask(
       AttachmentsCompanion.insert(
         id: attachmentId,
         taskId: taskId,
@@ -44,17 +43,17 @@ class AttachmentsRepository {
   }
 
   Future<void> removeForTask(String taskId) async {
-    await _dao.deleteByTaskId(taskId);
+    await db.attachmentsDao.deleteByTaskId(taskId);
   }
 
   Future<void> markUploaded({
     required String attachmentId,
     required String remoteKey,
   }) async {
-    await _dao.markSynced(attachmentId, remoteKey: remoteKey);
+    await db.attachmentsDao.markSynced(attachmentId, remoteKey: remoteKey);
   }
 
   Future<void> markNeedsUpload(String attachmentId) async {
-    await _dao.markPending(attachmentId);
+    await db.attachmentsDao.markPending(attachmentId);
   }
 }

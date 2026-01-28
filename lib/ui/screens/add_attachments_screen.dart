@@ -311,16 +311,9 @@ class _AddAttachmentsContainerState extends State<AddAttachmentsContainer> {
     try {
       final repo = context.read<AttachmentsRepository>();
 
-      // NOTE:
-      // This assumes your repository has a "setForTask(...)" style method
-      // like the one we created earlier.
-      //
-      // If your method name differs, keep the UI and just map the call here.
-
       final file = _pickedFile!;
       final stat = await file.stat();
 
-      // You likely already use UUIDs elsewhere; if not, replace with your own id generator.
       final attachmentId = DateTime.now().microsecondsSinceEpoch.toString();
 
       await repo.setForTask(
@@ -330,30 +323,26 @@ class _AddAttachmentsContainerState extends State<AddAttachmentsContainer> {
         mimeType: _inferMimeType(_pickedFileName),
         sizeBytes: stat.size,
         localPath: file.path,
-        sha256: null, // optional: compute later if you implement hashing
+        sha256: null,
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Attachment saved locally (pending upload).',
-            key: Key('snackbar_attachment_saved'),
-          ),
-        ),
+        const SnackBar(content: Text('Attachment saved locally (pending upload).')),
       );
 
       Navigator.of(context).pop();
-    } catch (_) {
+    } catch (e, st) {
+      // IMPORTANT: print the real error
+      // ignore: avoid_print
+      print('Attachment save failed: $e');
+      // ignore: avoid_print
+      print(st);
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Failed to save attachment.',
-            key: Key('snackbar_attachment_save_failed'),
-          ),
-        ),
+        SnackBar(content: Text('Failed to save attachment: $e')),
       );
     } finally {
       if (mounted) setState(() => _isUploading = false);

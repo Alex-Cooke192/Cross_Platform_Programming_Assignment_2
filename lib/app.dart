@@ -8,6 +8,7 @@ import 'package:maintenance_system/core/data/sync/sync_service.dart';
 import 'core/data/local/app_database.dart';
 import 'core/data/local/repositories/inspection_repository.dart';
 import 'core/data/local/repositories/technician_repository.dart';
+import 'core/data/local/repositories/attachments_repository.dart';
 import 'core/session/current_technician.dart';
 import 'core/theme/theme_controller.dart';
 import 'config/app_themes.dart';
@@ -40,6 +41,9 @@ class App extends StatelessWidget {
         ),
         Provider(
           create: (_) => TaskRepository(database), 
+        ), 
+        Provider<AttachmentsRepository>(
+          create: (_) => AttachmentsRepository(database), 
         ), 
         Provider<ISyncService>.value(value: syncService),
       ],
